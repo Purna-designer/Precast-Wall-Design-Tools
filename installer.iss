@@ -11,7 +11,7 @@ OutputBaseFilename=PrecastWallTool_Setup
 
 [Files]
 ; Grabs all compiled files from the GitHub Action build output
-Source: "..\build_output\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
+Source: ".\build_output\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autodesktop}\Precast Wall Tool"; Filename: "{app}\Precast Wall Horizontal Connection Tool.exe"
