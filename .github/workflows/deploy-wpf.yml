@@ -20,11 +20,11 @@ jobs:
       uses: nuget/setup-nuget@v1
 
     - name: Restore NuGet Packages
-      run: nuget restore "Precast Wall Design Tools.sln"
+      run: nuget restore "Precast Wall Horizontal Connection Tool\Precast Wall Horizontal Connection Tool.sln"
 
     - name: Build App (Release Configuration)
       run: |
-        msbuild "Precast Wall Design Tools.sln" /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=..\build_output\
+        msbuild "Precast Wall Horizontal Connection Tool\Precast Wall Horizontal Connection Tool.sln" /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=..\build_output\
 
     - name: Install Inno Setup
       run: choco install innosetup -y
