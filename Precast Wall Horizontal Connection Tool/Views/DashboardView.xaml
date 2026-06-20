@@ -1,0 +1,157 @@
+<UserControl x:Class="PrecastConnectionApp.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Theme.Paper}">
+    <Grid Margin="40">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header Area -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel>
+                <TextBlock Text="Projects" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource Theme.Ink}" Margin="0,0,0,8"/>
+                <TextBlock Text="Precast wall design workspace. Pick a project to review design forces, check capacities, and manage your building sections." 
+                           FontSize="14" Foreground="{StaticResource Theme.Muted}" TextWrapping="Wrap" MaxWidth="800" HorizontalAlignment="Left"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Command="{Binding NewProjectCommand}" Content="+ New project" 
+                        Style="{StaticResource PrimaryActionButtonStyle}" 
+                        Padding="16,8" Margin="0,5,15,5" Cursor="Hand">
+                </Button>
+
+                <Button Command="{Binding OpenProjectCommand}" Content="Open existing project" 
+                        Style="{StaticResource ActionButtonStyle}" 
+                        Padding="16,8" Cursor="Hand">
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Separator -->
+        <Border Grid.Row="1" BorderBrush="{StaticResource Theme.Line}" BorderThickness="0,0,0,1" Margin="0,30,0,20">
+            <TextBlock Text="RECENT PROJECTS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Theme.Muted}" Background="{StaticResource Theme.Paper}" Padding="0,0,15,0" HorizontalAlignment="Left" Margin="0,0,0,-8"/>
+        </Border>
+
+        <!-- Recent Projects Grid -->
+        <Grid Grid.Row="2">
+            <!-- Empty State Message -->
+            <TextBlock Text="No recent projects found." 
+                       FontSize="15" Foreground="{StaticResource Theme.Muted}" FontStyle="Italic"
+                       HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,20,0,0">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding RecentProjects.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,10,0,0">
+            <ItemsControl ItemsSource="{Binding RecentProjects}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Command="{Binding DataContext.OpenRecentProjectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                CommandParameter="{Binding FilePath}"
+                                Background="{StaticResource Theme.PaperPanel}" BorderBrush="{StaticResource Theme.Line}" BorderThickness="1" 
+                                Margin="0,0,20,20" Width="320" Height="220" Cursor="Hand" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10" Padding="20">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" MinHeight="45"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding ProjectName}" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource Theme.Ink}" TextWrapping="Wrap" MaxHeight="45" Margin="0,0,10,0"/>
+                                                
+                                                <!-- Unsafe Badge -->
+                                                <Border Grid.Column="1" Background="#FEE2E2" CornerRadius="15" Padding="12,5" VerticalAlignment="Top" Visibility="{Binding HasUnsafe, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding UnsafeColumns}" FontWeight="Bold" Foreground="#DC2626" FontSize="12" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="unsafe" FontWeight="SemiBold" Foreground="#DC2626" FontSize="11" HorizontalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <!-- All Safe Badge -->
+                                                <Border Grid.Column="1" Background="#D1FAE5" CornerRadius="15" Padding="12,5" VerticalAlignment="Top" Visibility="{Binding IsAllSafe, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <StackPanel>
+                                                        <TextBlock Text="all" FontWeight="Bold" Foreground="#059669" FontSize="12" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="safe" FontWeight="SemiBold" Foreground="#059669" FontSize="11" HorizontalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Location & Subtitle -->
+                                            <TextBlock Grid.Row="1" FontSize="13" Foreground="{StaticResource Theme.Muted}" Margin="0,6,0,0" TextWrapping="Wrap" LineHeight="18" Text="{Binding Location, FallbackValue='Unknown Location'}"/>
+                                            
+                                            <!-- Progress Bar (Grid based) -->
+                                            <Grid Grid.Row="2" Height="5" Margin="0,20,0,0" VerticalAlignment="Top">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{Binding SafeWidth}" />
+                                                    <ColumnDefinition Width="{Binding UnsafeWidth}" />
+                                                    <ColumnDefinition Width="{Binding ReviewWidth}" />
+                                                </Grid.ColumnDefinitions>
+                                                <!-- Safe -->
+                                                <Border Grid.Column="0" Background="#10B981" CornerRadius="3,0,0,3"/>
+                                                <!-- Unsafe -->
+                                                <Border Grid.Column="1" Background="#EF4444" CornerRadius="0"/>
+                                                <!-- Review/Remaining -->
+                                                <Border Grid.Column="2" Background="{StaticResource Theme.Line}" CornerRadius="0,3,3,0"/>
+                                            </Grid>
+
+                                            <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,15,0,15">
+                                                <TextBlock Text="{Binding TotalColumns}" FontWeight="Bold" Foreground="{StaticResource Theme.Ink}" FontSize="13"/>
+                                                <TextBlock Text=" columns" Foreground="{StaticResource Theme.Muted}" FontSize="13" Margin="0,0,12,0"/>
+                                                
+                                                <TextBlock Text="{Binding SafeColumns}" FontWeight="Bold" Foreground="{StaticResource Theme.Ink}" FontSize="13"/>
+                                                <TextBlock Text=" safe" Foreground="{StaticResource Theme.Muted}" FontSize="13" Margin="0,0,12,0"/>
+                                                
+                                                <TextBlock Text="{Binding ReviewColumns}" FontWeight="Bold" Foreground="{StaticResource Theme.Ink}" FontSize="13"/>
+                                                <TextBlock Text=" review" Foreground="{StaticResource Theme.Muted}" FontSize="13"/>
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Row="4" Text="{Binding RelativeTime}" FontSize="12" Foreground="{StaticResource Theme.Muted}" VerticalAlignment="Bottom"/>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="BorderBrush" Value="{StaticResource Theme.Accent}"/>
+                                            <Setter Property="Background" Value="#F8FDFE"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>
