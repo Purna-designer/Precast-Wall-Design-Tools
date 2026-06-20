@@ -1,0 +1,50 @@
+name: Build and Release WPF Installer
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers workflow only when you push a version tag (e.g., v1.0.0)
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup NuGet CLI
+      uses: nuget/setup-nuget@v1
+
+    - name: Restore NuGet Packages
+      run: nuget restore "Precast Wall Design Tools.sln"
+
+    - name: Build App (Release Configuration)
+      run: |
+        msbuild "Precast Wall Design Tools.sln" /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=..\build_output\
+
+    - name: Install Inno Setup
+      run: choco install innosetup -y
+
+    - name: Compile Installer (.exe)
+      run: |
+        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+      shell: powershell
+
+    - name: Generate GitHub Release and Upload Installer
+      uses: softprops/action-gh-release@v2
+      with:
+        files: .\installer_output\PrecastWallTool_Setup.exe
+        body: |
+          Automated production release for version ${{ github.ref_name }}.
+          
+          ### Installation:
+          1. Download the `PrecastWallTool_Setup.exe` file below.
+          2. Double-click to install the application.
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

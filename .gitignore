@@ -418,3 +418,8 @@ analyze_excel.py
 
 # Ignore all HTML files
 *.html
+
+# Ignore local scratchpad and data files
+*.md
+*.xlsm
+*.xlsx
