@@ -1,0 +1,1256 @@
+﻿olevba 0.60.2 on Python 3.14.2 - http://decalage.info/python/oletools
+===============================================================================
+FILE: Precast Horizontal Connection - 10.02.2020.xlsm
+Type: OpenXML
+WARNING  For now, VBA stomping cannot be detected for files in memory
+-------------------------------------------------------------------------------
+VBA MACRO Sheet1.cls 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Sheet1'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Private Sub CommandButton1_Click()
+
+col_width = Sheets("Curve").Range("E4").Value
+col_depth = Sheets("Curve").Range("E5").Value
+clearcover = Sheets("Curve").Range("E6").Value
+sheardia = Sheets("Curve").Range("E7").Value
+mainbardia = Sheets("Curve").Range("E8").Value
+bars_minorface = Sheets("Curve").Range("E9").Value
+bars_majorface = Sheets("Curve").Range("E10").Value
+fck = Sheets("Curve").Range("E11").Value
+fy = Sheets("Curve").Range("E12").Value
+
+effectivecover = clearcover + sheardia + (mainbardia / 2)
+
+Sheets("Curve").Range("E13").Value = WorksheetFunction.RoundUp((2 * (bars_minorface + bars_majorface)) - 4, 0)
+Sheets("Curve").Range("E14").Value = (Sheets("Curve").Range("E13").Value) * (3.1415 * mainbardia * mainbardia / 4)
+
+Dim majorlayers(10, 6) As Variant
+
+majorlayers(1, 1) = bars_minorface * (3.1415 * mainbardia * mainbardia / 4)
+majorlayers(1, 2) = (col_depth / 2) - (effectivecover)
+
+majorlayers(bars_majorface, 1) = bars_minorface * (3.1415 * mainbardia * mainbardia / 4)
+majorlayers(bars_majorface, 2) = (col_depth / 2) - (effectivecover + ((bars_majorface - 1) * (col_depth - (2 * effectivecover)) / (bars_majorface - 1)))
+
+For i = 2 To (bars_majorface - 1)
+    majorlayers(i, 1) = 2 * (3.1415 * mainbardia * mainbardia / 4)
+    majorlayers(i, 2) = (col_depth / 2) - (effectivecover + ((i - 1) * (col_depth - (2 * effectivecover)) / (bars_majorface - 1)))
+Next i
+
+Dim stress_strain(8, 2) As Variant
+
+stress_strain(1, 1) = 0
+stress_strain(2, 1) = 0.00174
+stress_strain(3, 1) = 0.00195
+stress_strain(4, 1) = 0.00226
+stress_strain(5, 1) = 0.00277
+stress_strain(6, 1) = 0.00312
+stress_strain(7, 1) = 0.00417
+stress_strain(8, 1) = 0.1
+stress_strain(1, 2) = 0
+stress_strain(2, 2) = 347.8
+stress_strain(3, 2) = 369.6
+stress_strain(4, 2) = 391.3
+stress_strain(5, 2) = 413
+stress_strain(6, 2) = 423.9
+stress_strain(7, 2) = 434.8
+stress_strain(8, 2) = 434.8
+
+
+finalvalue = 10 * col_depth
+'intial value is intial value of xu not xu/D
+'final value  is final value of xu not xu/D
+increment = (finalvalue - intialvalue) / 199
+intialvalue = -0.01 * col_depth
+For i = 1 To 199
+    'xu = 210.6
+    xu = intialvalue + (i * increment)
+    g = 16 / (((7 * xu / col_depth) - 3) ^ 2)
+    If xu < col_depth Or xu = col_depth Then
+        A = 0.362 * xu / col_depth
+        xbar = 0.416 * xu
+    ElseIf xu > col_depth Then
+        A = 0.447 * (1 - (4 * g / 21))
+        xbar = (0.5 - (8 * g / 49)) * (col_depth / (1 - (4 * g / 21)))
+    End If
+    Sheets("Curve").Range("E16").Value = effectivecover / col_depth
+    Sheets("Curve").Range("E15").Value = Sheets("Curve").Range("E14").Value * 100 / (Sheets("Curve").Range("E4").Value) / Sheets("Curve").Range("E5").Value / Sheets("Curve").Range("E11").Value
+
+
+    cc = A * fck * col_width * (col_depth)
+    Sheets("Curve").Range("AA6").Value = cc
+    Mc = cc * ((col_depth / 2) - xbar)
+    For j = 1 To bars_majorface
+        If (xu < col_depth) Or (xu = col_depth) Then
+            esi = 0.0035 * (xu - (col_depth / 2) + majorlayers(j, 2)) / xu
+        ElseIf xu > col_depth Then
+            esi = 0.002 * (1 + ((majorlayers(j, 2) - (col_depth / 14)) / (xu - (3 * col_depth / 7))))
+        End If
+        If esi < 0 Or esi = 0 Then
+            fci = 0
+        ElseIf esi > 0.002 Or esi = 0.002 Then
+            fci = 0.447 * fck
+        ElseIf esi > 0 And esi < 0.002 Then
+            fci = 0.447 * fck * ((2 * esi / 0.002) - ((esi / 0.002) ^ 2))
+        End If
+        For k = 1 To 7
+            If Abs(esi) = stress_strain(k, 1) Then
+                fsi = stress_strain(k, 2) * esi / Abs(esi)
+            ElseIf Abs(esi) > stress_strain(k, 1) And Abs(esi) < stress_strain(k + 1, 1) Then
+                fsi = (stress_strain(k, 2) + ((stress_strain(k + 1, 2) - stress_strain(k, 2)) * (Abs(esi) - stress_strain(k, 1)) / (stress_strain(k + 1, 1) - stress_strain(k, 1)))) * (esi / Abs(esi))
+            ElseIf esi < -0.0035 Then
+                fsi = -0.87 * fy
+            End If
+        Next k
+        majorlayers(j, 4) = esi
+        majorlayers(j, 5) = fsi
+        majorlayers(j, 3) = (fsi - fci) * majorlayers(j, 1)
+        majorlayers(j, 6) = majorlayers(j, 3) * majorlayers(j, 2)
+    Next j
+    cs = majorlayers(1, 3) + majorlayers(2, 3) + majorlayers(3, 3) + majorlayers(4, 3) + majorlayers(5, 3) + majorlayers(6, 3) + majorlayers(7, 3) + majorlayers(8, 3) + majorlayers(9, 3) + majorlayers(10, 3)
+    Ms = majorlayers(1, 6) + majorlayers(2, 6) + majorlayers(3, 6) + majorlayers(4, 6) + majorlayers(5, 6) + majorlayers(6, 6) + majorlayers(7, 6) + majorlayers(8, 6) + majorlayers(9, 6) + majorlayers(10, 6)
+    Sheets("Curve").Range("AA7").Value = cs
+Sheets("Curve").Cells(i + 5, 100).Value = xu / col_depth
+Sheets("Curve").Cells(i + 5, 102).Value = (cc + cs) / (fck * col_width * col_depth)
+Sheets("Curve").Cells(i + 5, 101) = (Mc + Ms) / (fck * col_width * col_depth * col_depth)
+'Sheets("Curve").cells(i + 5, 13).Value = (Mc) / 1000000
+'Sheets("Curve").cells(i + 5, 14).Value = (Ms) / 1000000
+
+Next i
+
+
+'For i = 1 To bars_majorface
+'    Sheets("Curve").cells(i, 25).Value = majorlayers(i, 1)
+'    Sheets("Curve").cells(i, 26).Value = majorlayers(i, 2)
+'    Sheets("Curve").cells(i, 27).Value = majorlayers(i, 3)
+'    Sheets("Curve").cells(i, 28).Value = majorlayers(i, 4)
+'    Sheets("Curve").cells(i, 29).Value = majorlayers(i, 5)
+'    Sheets("Curve").cells(i, 30).Value = majorlayers(i, 6)
+'Next i
+
+
+End Sub
+
+Private Sub CommandButton2_Click()
+axialforce = Sheets("Curve").Range("E18").Value
+srange = Sheets("Curve").Range("L2").Value
+erange = Sheets("Curve").Range("L3").Value
+
+For i = srange To (erange - 1)
+    If Sheets("Curve").Cells(i, 102).Value = axialforce Then
+        Sheets("Curve").Range("E19").Value = Sheets("Curve").Cells(i, 101).Value
+    ElseIf Sheets("Curve").Cells(i, 102).Value < axialforce And Sheets("Curve").Cells(i + 1, 102).Value > axialforce Then
+        x1 = Sheets("Curve").Cells(i, 102).Value
+        x2 = Sheets("Curve").Cells(i + 1, 102).Value
+        y1 = Sheets("Curve").Cells(i, 101).Value
+        y2 = Sheets("Curve").Cells(i + 1, 101).Value
+        x = axialforce
+
+        y = y1 + ((y2 - y1) * (x - x1) / (x2 - x1))
+        Sheets("Curve").Range("E19").Value = y
+    End If
+Next i
+End Sub
+-------------------------------------------------------------------------------
+VBA MACRO ThisWorkbook.cls 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/ThisWorkbook'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+(empty macro)
+-------------------------------------------------------------------------------
+VBA MACRO Sheet2.cls 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Sheet2'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Private Sub CommandButton1_Click()
+Sheets("Interaction values").Range("BK5").Value = 5
+
+If Sheets("Interaction values").Range("BK4").Value = "" Then
+    MsgBox "CLICK FILL M3 VALUES"
+End If
+
+
+col_width = Sheets("Curve").Range("E5").Value
+col_depth = Sheets("Curve").Range("E4").Value
+
+clearcover = Sheets("Curve").Range("E6").Value
+sheardia = Sheets("Curve").Range("E7").Value
+mainbardia = Sheets("Curve").Range("E8").Value
+bars_minorface = Sheets("Curve").Range("E10").Value
+bars_majorface = Sheets("Curve").Range("E9").Value
+fck = Sheets("Curve").Range("E11").Value
+fy = Sheets("Curve").Range("E12").Value
+
+effectivecover = clearcover + sheardia + (mainbardia / 2)
+
+Sheets("Curve").Range("E13").Value = WorksheetFunction.RoundUp((2 * (bars_minorface + bars_majorface)) - 4, 0)
+Sheets("Curve").Range("E14").Value = (Sheets("Curve").Range("E13").Value) * (3.1415 * mainbardia * mainbardia / 4)
+
+Dim majorlayers(10, 6) As Variant
+
+majorlayers(1, 1) = bars_minorface * (3.1415 * mainbardia * mainbardia / 4)
+majorlayers(1, 2) = (col_depth / 2) - (effectivecover)
+
+majorlayers(bars_majorface, 1) = bars_minorface * (3.1415 * mainbardia * mainbardia / 4)
+majorlayers(bars_majorface, 2) = (col_depth / 2) - (effectivecover + ((bars_majorface - 1) * (col_depth - (2 * effectivecover)) / (bars_majorface - 1)))
+
+For i = 2 To (bars_majorface - 1)
+    majorlayers(i, 1) = 2 * (3.1415 * mainbardia * mainbardia / 4)
+    majorlayers(i, 2) = (col_depth / 2) - (effectivecover + ((i - 1) * (col_depth - (2 * effectivecover)) / (bars_majorface - 1)))
+Next i
+
+Dim stress_strain(8, 2) As Variant
+
+stress_strain(1, 1) = 0
+stress_strain(2, 1) = 0.00174
+stress_strain(3, 1) = 0.00195
+stress_strain(4, 1) = 0.00226
+stress_strain(5, 1) = 0.00277
+stress_strain(6, 1) = 0.00312
+stress_strain(7, 1) = 0.00417
+stress_strain(8, 1) = 0.1
+stress_strain(1, 2) = 0
+stress_strain(2, 2) = 347.8
+stress_strain(3, 2) = 369.6
+stress_strain(4, 2) = 391.3
+stress_strain(5, 2) = 413
+stress_strain(6, 2) = 423.9
+stress_strain(7, 2) = 434.8
+stress_strain(8, 2) = 434.8
+
+
+finalvalue = 10 * col_depth
+'intial value is intial value of xu not xu/D
+'final value  is final value of xu not xu/D
+increment = (finalvalue - intialvalue) / 199
+intialvalue = -0.01 * col_depth
+For i = 1 To 199
+    'xu = 210.6
+    xu = intialvalue + (i * increment)
+    g = 16 / (((7 * xu / col_depth) - 3) ^ 2)
+    If xu < col_depth Or xu = col_depth Then
+        A = 0.362 * xu / col_depth
+        xbar = 0.416 * xu
+    ElseIf xu > col_depth Then
+        A = 0.447 * (1 - (4 * g / 21))
+        xbar = (0.5 - (8 * g / 49)) * (col_depth / (1 - (4 * g / 21)))
+    End If
+    Sheets("Curve").Range("E16").Value = effectivecover / col_depth
+    Sheets("Curve").Range("E15").Value = Sheets("Curve").Range("E14").Value * 100 / (Sheets("Curve").Range("E4").Value) / Sheets("Curve").Range("E5").Value / Sheets("Curve").Range("E11").Value
+
+
+    cc = A * fck * col_width * (col_depth)
+    Sheets("Curve").Range("AA6").Value = cc
+    Mc = cc * ((col_depth / 2) - xbar)
+    For j = 1 To bars_majorface
+        If (xu < col_depth) Or (xu = col_depth) Then
+            esi = 0.0035 * (xu - (col_depth / 2) + majorlayers(j, 2)) / xu
+        ElseIf xu > col_depth Then
+            esi = 0.002 * (1 + ((majorlayers(j, 2) - (col_depth / 14)) / (xu - (3 * col_depth / 7))))
+        End If
+        If esi < 0 Or esi = 0 Then
+            fci = 0
+        ElseIf esi > 0.002 Or esi = 0.002 Then
+            fci = 0.447 * fck
+        ElseIf esi > 0 And esi < 0.002 Then
+            fci = 0.447 * fck * ((2 * esi / 0.002) - ((esi / 0.002) ^ 2))
+        End If
+        For k = 1 To 7
+            If Abs(esi) = stress_strain(k, 1) Then
+                fsi = stress_strain(k, 2) * esi / Abs(esi)
+            ElseIf Abs(esi) > stress_strain(k, 1) And Abs(esi) < stress_strain(k + 1, 1) Then
+                fsi = (stress_strain(k, 2) + ((stress_strain(k + 1, 2) - stress_strain(k, 2)) * (Abs(esi) - stress_strain(k, 1)) / (stress_strain(k + 1, 1) - stress_strain(k, 1)))) * (esi / Abs(esi))
+            ElseIf esi < -0.0035 Then
+                fsi = -0.87 * fy
+            End If
+        Next k
+        majorlayers(j, 4) = esi
+        majorlayers(j, 5) = fsi
+        majorlayers(j, 3) = (fsi - fci) * majorlayers(j, 1)
+        majorlayers(j, 6) = majorlayers(j, 3) * majorlayers(j, 2)
+    Next j
+    cs = majorlayers(1, 3) + majorlayers(2, 3) + majorlayers(3, 3) + majorlayers(4, 3) + majorlayers(5, 3) + majorlayers(6, 3) + majorlayers(7, 3) + majorlayers(8, 3) + majorlayers(9, 3) + majorlayers(10, 3)
+    Ms = majorlayers(1, 6) + majorlayers(2, 6) + majorlayers(3, 6) + majorlayers(4, 6) + majorlayers(5, 6) + majorlayers(6, 6) + majorlayers(7, 6) + majorlayers(8, 6) + majorlayers(9, 6) + majorlayers(10, 6)
+    Sheets("Curve").Range("AA7").Value = cs
+Sheets("Curve").Cells(i + 5, 100).Value = xu / col_depth
+Sheets("Curve").Cells(i + 5, 102).Value = (cc + cs) / (fck * col_width * col_depth)
+Sheets("Curve").Cells(i + 5, 101) = (Mc + Ms) / (fck * col_width * col_depth * col_depth)
+
+Sheets("Calculation sheet").Cells(i + 5, 103).Value = (Mc + Ms) / (fck * col_width * col_depth * col_depth)
+Sheets("Calculation sheet").Cells(i + 5, 104).Value = (cc + cs) / (fck * col_width * col_depth)
+
+
+'Sheets("Curve").cells(i + 5, 13).Value = (Mc) / 1000000
+'Sheets("Curve").cells(i + 5, 14).Value = (Ms) / 1000000
+
+Next i
+
+
+'For i = 1 To bars_majorface
+'    Sheets("Curve").cells(i, 25).Value = majorlayers(i, 1)
+'    Sheets("Curve").cells(i, 26).Value = majorlayers(i, 2)
+'    Sheets("Curve").cells(i, 27).Value = majorlayers(i, 3)
+'    Sheets("Curve").cells(i, 28).Value = majorlayers(i, 4)
+'    Sheets("Curve").cells(i, 29).Value = majorlayers(i, 5)
+'    Sheets("Curve").cells(i, 30).Value = majorlayers(i, 6)
+'Next i
+MsgBox "DONE"
+End Sub
+
+Private Sub CommandButton10_Click()
+srange = Sheets("Summary").Range("D1").Value
+erange = Sheets("Summary").Range("D2").Value
+
+flevel = Sheets("Interaction values").Range("D7").Value
+cname = Sheets("Interaction values").Range("D6").Value
+
+For i = srange To erange
+    If Sheets("Summary").Cells(i, 1) = flevel And Sheets("Summary").Cells(i, 2) = cname And Sheets("Summary").Cells(i - 1, 2) <> "COLUMN LABEL" Then
+        Sheets("Interaction values").Range("D7").Value = Sheets("Summary").Cells(i - 1, 1)
+        Sheets("Interaction values").Range("D6").Value = Sheets("Summary").Cells(i - 1, 2)
+        Sheets("Interaction values").Range("D8").Value = Sheets("Summary").Cells(i - 1, 3)
+        Sheets("Interaction values").Range("D9").Value = Sheets("Summary").Cells(i - 1, 4)
+        Sheets("Interaction values").Range("D10").Value = Sheets("Summary").Cells(i - 1, 5)
+        Sheets("Interaction values").Range("D11").Value = Sheets("Summary").Cells(i - 1, 6)
+        Sheets("Interaction values").Range("D12").Value = Sheets("Summary").Cells(i - 1, 7)
+        Sheets("Interaction values").Range("D13").Value = Sheets("Summary").Cells(i - 1, 8)
+        Sheets("Interaction values").Range("D14").Value = Sheets("Summary").Cells(i - 1, 9)
+        Sheets("Interaction values").Range("D15").Value = Sheets("Summary").Cells(i - 1, 10)
+        Sheets("Interaction values").Range("D16").Value = Sheets("Summary").Cells(i - 1, 11)
+        Sheets("Interaction values").Range("D17").Value = Sheets("Summary").Cells(i - 1, 12)
+        Sheets("Interaction values").Range("D18").Value = Sheets("Summary").Cells(i - 1, 13)
+        Sheets("Interaction values").Range("D20").Value = Sheets("Summary").Cells(i - 1, 15)
+        Sheets("Interaction values").Range("D21").Value = Sheets("Summary").Cells(i - 1, 16)
+                
+    ElseIf Sheets("Summary").Cells(i, 1) = flevel And Sheets("Summary").Cells(i, 2) = cname And Sheets("Summary").Cells(i - 1, 2) = "COLUMN LABEL" Then
+        MsgBox "END LABEL"
+    End If
+Next i
+MsgBox "DONE"
+
+End Sub
+
+Private Sub CommandButton11_Click()
+srange = Sheets("Summary").Range("D1").Value
+erange = Sheets("Summary").Range("D2").Value
+
+flevel = Sheets("Interaction values").Range("D7").Value
+cname = Sheets("Interaction values").Range("D6").Value
+
+For i = srange To erange
+    If Sheets("Summary").Cells(i, 1) = flevel And Sheets("Summary").Cells(i, 2) = cname And Sheets("Summary").Cells(i + 1, 2) <> 0 Then
+        Sheets("Interaction values").Range("D7").Value = Sheets("Summary").Cells(i + 1, 1)
+        Sheets("Interaction values").Range("D6").Value = Sheets("Summary").Cells(i + 1, 2)
+        Sheets("Interaction values").Range("D8").Value = Sheets("Summary").Cells(i + 1, 3)
+        Sheets("Interaction values").Range("D9").Value = Sheets("Summary").Cells(i + 1, 4)
+        Sheets("Interaction values").Range("D10").Value = Sheets("Summary").Cells(i + 1, 5)
+        Sheets("Interaction values").Range("D11").Value = Sheets("Summary").Cells(i + 1, 6)
+        Sheets("Interaction values").Range("D12").Value = Sheets("Summary").Cells(i + 1, 7)
+        Sheets("Interaction values").Range("D13").Value = Sheets("Summary").Cells(i + 1, 8)
+        Sheets("Interaction values").Range("D14").Value = Sheets("Summary").Cells(i + 1, 9)
+        Sheets("Interaction values").Range("D15").Value = Sheets("Summary").Cells(i + 1, 10)
+        Sheets("Interaction values").Range("D16").Value = Sheets("Summary").Cells(i + 1, 11)
+        Sheets("Interaction values").Range("D17").Value = Sheets("Summary").Cells(i + 1, 12)
+        Sheets("Interaction values").Range("D18").Value = Sheets("Summary").Cells(i + 1, 13)
+        Sheets("Interaction values").Range("D20").Value = Sheets("Summary").Cells(i + 1, 15)
+        Sheets("Interaction values").Range("D21").Value = Sheets("Summary").Cells(i + 1, 16)
+        
+    ElseIf Sheets("Summary").Cells(i, 1) = flevel And Sheets("Summary").Cells(i, 2) = cname And Sheets("Summary").Cells(i + 1, 2) = 0 Then
+        MsgBox "END LABEL"
+    End If
+Next i
+MsgBox "DONE"
+
+End Sub
+
+Private Sub CommandButton12_Click()
+Sheets("Interaction values").Range("BK3").Value = 3
+
+If Sheets("Interaction values").Range("BK2").Value = "" Then
+    MsgBox "CLICK FILL DATA"
+End If
+
+col_width = Sheets("Curve").Range("E4").Value
+col_depth = Sheets("Curve").Range("E5").Value
+
+clearcover = Sheets("Curve").Range("E6").Value
+sheardia = Sheets("Curve").Range("E7").Value
+mainbardia = Sheets("Curve").Range("E8").Value
+bars_minorface = Sheets("Curve").Range("E9").Value
+bars_majorface = Sheets("Curve").Range("E10").Value
+fck = Sheets("Curve").Range("E11").Value
+fy = Sheets("Curve").Range("E12").Value
+
+effectivecover = clearcover + sheardia + (mainbardia / 2)
+
+Sheets("Curve").Range("E13").Value = WorksheetFunction.RoundUp((2 * (bars_minorface + bars_majorface)) - 4, 0)
+Sheets("Curve").Range("E14").Value = (Sheets("Curve").Range("E13").Value) * (3.1415 * mainbardia * mainbardia / 4)
+
+Dim majorlayers(100, 6) As Variant
+
+majorlayers(1, 1) = bars_minorface * (3.1415 * (mainbardia * mainbardia) / 4)
+majorlayers(1, 2) = (col_depth / 2) - (effectivecover)
+
+majorlayers(bars_majorface, 1) = bars_minorface * (3.1415 * mainbardia * mainbardia / 4)
+majorlayers(bars_majorface, 2) = (col_depth / 2) - (effectivecover + ((bars_majorface - 1) * (col_depth - (2 * effectivecover)) / (bars_majorface - 1)))
+
+For i = 2 To (bars_majorface - 1)
+    majorlayers(i, 1) = 2 * (3.1415 * mainbardia * mainbardia / 4)
+    majorlayers(i, 2) = (col_depth / 2) - (effectivecover + ((i - 1) * (col_depth - (2 * effectivecover)) / (bars_majorface - 1)))
+Next i
+
+Dim stress_strain(8, 2) As Variant
+
+stress_strain(1, 1) = 0
+stress_strain(2, 1) = 0.00174
+stress_strain(3, 1) = 0.00195
+stress_strain(4, 1) = 0.00226
+stress_strain(5, 1) = 0.00277
+stress_strain(6, 1) = 0.00312
+stress_strain(7, 1) = 0.00417
+stress_strain(8, 1) = 0.1
+stress_strain(1, 2) = 0
+stress_strain(2, 2) = 347.8
+stress_strain(3, 2) = 369.6
+stress_strain(4, 2) = 391.3
+stress_strain(5, 2) = 413
+stress_strain(6, 2) = 423.9
+stress_strain(7, 2) = 434.8
+stress_strain(8, 2) = 434.8
+
+
+finalvalue = 10 * col_depth
+'intial value is intial value of xu not xu/D
+'final value  is final value of xu not xu/D
+increment = (finalvalue - intialvalue) / 199
+intialvalue = -0.01 * col_depth
+For i = 1 To 199
+    xu = intialvalue + (i * increment)
+    g = 16 / (((7 * xu / col_depth) - 3) ^ 2)
+    
+    If xu < col_depth Or xu = col_depth Then
+        A = 0.362 * xu / col_depth
+        xbar = 0.416 * xu
+    ElseIf xu > col_depth Then
+        A = 0.447 * (1 - (4 * g / 21))
+        xbar = (0.5 - (8 * g / 49)) * (col_depth / (1 - (4 * g / 21)))
+    End If
+    
+    Sheets("Curve").Range("E16").Value = effectivecover / col_depth
+    Sheets("Curve").Range("E15").Value = Sheets("Curve").Range("E14").Value * 100 / (Sheets("Curve").Range("E4").Value) / Sheets("Curve").Range("E5").Value / Sheets("Curve").Range("E11").Value
+    
+    cc = A * fck * col_width * (col_depth)
+    Sheets("Curve").Range("AA6").Value = cc
+    Mc = cc * ((col_depth / 2) - xbar)
+    For j = 1 To bars_majorface
+        If (xu < col_depth) Or (xu = col_depth) Then
+            esi = 0.0035 * (xu - (col_depth / 2) + majorlayers(j, 2)) / xu
+        ElseIf xu > col_depth Then
+            esi = 0.002 * (1 + ((majorlayers(j, 2) - (col_depth / 14)) / (xu - (3 * col_depth / 7))))
+        End If
+        If esi < 0 Or esi = 0 Then
+            fci = 0
+        ElseIf esi > 0.002 Or esi = 0.002 Then
+            fci = 0.447 * fck
+        ElseIf esi > 0 And esi < 0.002 Then
+            fci = 0.447 * fck * ((2 * esi / 0.002) - ((esi / 0.002) ^ 2))
+        End If
+        For k = 1 To 7
+            If Abs(esi) = stress_strain(k, 1) Then
+                fsi = stress_strain(k, 2) * esi / Abs(esi)
+            ElseIf Abs(esi) > stress_strain(k, 1) And Abs(esi) < stress_strain(k + 1, 1) Then
+                fsi = (stress_strain(k, 2) + ((stress_strain(k + 1, 2) - stress_strain(k, 2)) * (Abs(esi) - stress_strain(k, 1)) / (stress_strain(k + 1, 1) - stress_strain(k, 1)))) * (esi / Abs(esi))
+            ElseIf esi < -0.0035 Then
+                fsi = -0.87 * fy
+            End If
+        Next k
+        majorlayers(j, 4) = esi
+        majorlayers(j, 5) = fsi
+        majorlayers(j, 3) = (fsi - fci) * majorlayers(j, 1)
+        majorlayers(j, 6) = majorlayers(j, 3) * majorlayers(j, 2)
+    Next j
+    cs = majorlayers(1, 3) + majorlayers(2, 3) + majorlayers(3, 3) + majorlayers(4, 3) + majorlayers(5, 3) + majorlayers(6, 3) + majorlayers(7, 3) + majorlayers(8, 3) + majorlayers(9, 3) + majorlayers(10, 3)
+    Ms = majorlayers(1, 6) + majorlayers(2, 6) + majorlayers(3, 6) + majorlayers(4, 6) + majorlayers(5, 6) + majorlayers(6, 6) + majorlayers(7, 6) + majorlayers(8, 6) + majorlayers(9, 6) + majorlayers(10, 6)
+    Sheets("Curve").Range("AA7").Value = cs
+Sheets("Curve").Cells(i + 5, 100).Value = xu / col_depth
+Sheets("Curve").Cells(i + 5, 102).Value = (cc + cs) / (fck * col_width * col_depth)
+Sheets("Curve").Cells(i + 5, 101) = (Mc + Ms) / (fck * col_width * col_depth * col_depth)
+
+Sheets("Calculation sheet").Cells(i + 5, 101).Value = (Mc + Ms) / (fck * col_width * col_depth * col_depth)
+Sheets("Calculation sheet").Cells(i + 5, 102).Value = (cc + cs) / (fck * col_width * col_depth)
+
+
+'Sheets("Curve").cells(i + 5, 13).Value = (Mc) / 1000000
+'Sheets("Curve").cells(i + 5, 14).Value = (Ms) / 1000000
+
+Next i
+
+
+'For i = 1 To bars_majorface
+'    Sheets("Curve").cells(i, 25).Value = majorlayers(i, 1)
+'    Sheets("Curve").cells(i, 26).Value = majorlayers(i, 2)
+'    Sheets("Curve").cells(i, 27).Value = majorlayers(i, 3)
+'    Sheets("Curve").cells(i, 28).Value = majorlayers(i, 4)
+'    Sheets("Curve").cells(i, 29).Value = majorlayers(i, 5)
+'    Sheets("Curve").cells(i, 30).Value = majorlayers(i, 6)
+'Next i
+
+MsgBox "DONE"
+
+For i = 1 To bars_majorface
+    Sheets("Curve").Cells(i, 20).Value = majorlayers(i, 1)
+    Sheets("Curve").Cells(i, 21).Value = majorlayers(i, 2)
+Next i
+End Sub
+
+Private Sub CommandButton2_Click()
+Sheets("Interaction values").Range("BK3").Value = 3
+
+If Sheets("Interaction values").Range("BK2").Value = "" Then
+    MsgBox "CLICK FILL DATA"
+End If
+
+
+col_width = Sheets("Curve").Range("E4").Value
+col_depth = Sheets("Curve").Range("E5").Value
+
+clearcover = Sheets("Curve").Range("E6").Value
+sheardia = Sheets("Curve").Range("E7").Value
+mainbardia = Sheets("Curve").Range("E8").Value
+bars_minorface = Sheets("Curve").Range("E9").Value
+bars_majorface = Sheets("Curve").Range("E10").Value
+fck = Sheets("Curve").Range("E11").Value
+fy = Sheets("Curve").Range("E12").Value
+
+effectivecover = clearcover + sheardia + (mainbardia / 2)
+
+Sheets("Curve").Range("E13").Value = WorksheetFunction.RoundUp((2 * (bars_minorface + bars_majorface)) - 4, 0)
+Sheets("Curve").Range("E14").Value = (Sheets("Curve").Range("E13").Value) * (3.1415 * mainbardia * mainbardia / 4)
+
+Dim majorlayers(10, 6) As Variant
+
+majorlayers(1, 1) = bars_minorface * (3.1415 * mainbardia * mainbardia / 4)
+majorlayers(1, 2) = (col_depth / 2) - (effectivecover)
+
+majorlayers(bars_majorface, 1) = bars_minorface * (3.1415 * mainbardia * mainbardia / 4)
+majorlayers(bars_majorface, 2) = (col_depth / 2) - (effectivecover + ((bars_majorface - 1) * (col_depth - (2 * effectivecover)) / (bars_majorface - 1)))
+
+For i = 2 To (bars_majorface - 1)
+    majorlayers(i, 1) = 2 * (3.1415 * mainbardia * mainbardia / 4)
+    majorlayers(i, 2) = (col_depth / 2) - (effectivecover + ((i - 1) * (col_depth - (2 * effectivecover)) / (bars_majorface - 1)))
+Next i
+
+Dim stress_strain(8, 2) As Variant
+
+stress_strain(1, 1) = 0
+stress_strain(2, 1) = 0.00174
+stress_strain(3, 1) = 0.00195
+stress_strain(4, 1) = 0.00226
+stress_strain(5, 1) = 0.00277
+stress_strain(6, 1) = 0.00312
+stress_strain(7, 1) = 0.00417
+stress_strain(8, 1) = 0.1
+stress_strain(1, 2) = 0
+stress_strain(2, 2) = 347.8
+stress_strain(3, 2) = 369.6
+stress_strain(4, 2) = 391.3
+stress_strain(5, 2) = 413
+stress_strain(6, 2) = 423.9
+stress_strain(7, 2) = 434.8
+stress_strain(8, 2) = 434.8
+
+
+finalvalue = 10 * col_depth
+'intial value is intial value of xu not xu/D
+'final value  is final value of xu not xu/D
+increment = (finalvalue - intialvalue) / 199
+intialvalue = -0.01 * col_depth
+For i = 1 To 199
+    'xu = 210.6
+    xu = intialvalue + (i * increment)
+    g = 16 / (((7 * xu / col_depth) - 3) ^ 2)
+    If xu < col_depth Or xu = col_depth Then
+        A = 0.362 * xu / col_depth
+        xbar = 0.416 * xu
+    ElseIf xu > col_depth Then
+        A = 0.447 * (1 - (4 * g / 21))
+        xbar = (0.5 - (8 * g / 49)) * (col_depth / (1 - (4 * g / 21)))
+    End If
+    Sheets("Curve").Range("E16").Value = effectivecover / col_depth
+    Sheets("Curve").Range("E15").Value = Sheets("Curve").Range("E14").Value * 100 / (Sheets("Curve").Range("E4").Value) / Sheets("Curve").Range("E5").Value / Sheets("Curve").Range("E11").Value
+
+
+    cc = A * fck * col_width * (col_depth)
+    Sheets("Curve").Range("AA6").Value = cc
+    Mc = cc * ((col_depth / 2) - xbar)
+    For j = 1 To bars_majorface
+        If (xu < col_depth) Or (xu = col_depth) Then
+            esi = 0.0035 * (xu - (col_depth / 2) + majorlayers(j, 2)) / xu
+        ElseIf xu > col_depth Then
+            esi = 0.002 * (1 + ((majorlayers(j, 2) - (col_depth / 14)) / (xu - (3 * col_depth / 7))))
+        End If
+        If esi < 0 Or esi = 0 Then
+            fci = 0
+        ElseIf esi > 0.002 Or esi = 0.002 Then
+            fci = 0.447 * fck
+        ElseIf esi > 0 And esi < 0.002 Then
+            fci = 0.447 * fck * ((2 * esi / 0.002) - ((esi / 0.002) ^ 2))
+        End If
+        For k = 1 To 7
+            If Abs(esi) = stress_strain(k, 1) Then
+                fsi = stress_strain(k, 2) * esi / Abs(esi)
+            ElseIf Abs(esi) > stress_strain(k, 1) And Abs(esi) < stress_strain(k + 1, 1) Then
+                fsi = (stress_strain(k, 2) + ((stress_strain(k + 1, 2) - stress_strain(k, 2)) * (Abs(esi) - stress_strain(k, 1)) / (stress_strain(k + 1, 1) - stress_strain(k, 1)))) * (esi / Abs(esi))
+            ElseIf esi < -0.0035 Then
+                fsi = -0.87 * fy
+            End If
+        Next k
+        majorlayers(j, 4) = esi
+        majorlayers(j, 5) = fsi
+        majorlayers(j, 3) = (fsi - fci) * majorlayers(j, 1)
+        majorlayers(j, 6) = majorlayers(j, 3) * majorlayers(j, 2)
+    Next j
+    cs = majorlayers(1, 3) + majorlayers(2, 3) + majorlayers(3, 3) + majorlayers(4, 3) + majorlayers(5, 3) + majorlayers(6, 3) + majorlayers(7, 3) + majorlayers(8, 3) + majorlayers(9, 3) + majorlayers(10, 3)
+    Ms = majorlayers(1, 6) + majorlayers(2, 6) + majorlayers(3, 6) + majorlayers(4, 6) + majorlayers(5, 6) + majorlayers(6, 6) + majorlayers(7, 6) + majorlayers(8, 6) + majorlayers(9, 6) + majorlayers(10, 6)
+    Sheets("Curve").Range("AA7").Value = cs
+Sheets("Curve").Cells(i + 5, 100).Value = xu / col_depth
+Sheets("Curve").Cells(i + 5, 102).Value = (cc + cs) / (fck * col_width * col_depth)
+Sheets("Curve").Cells(i + 5, 101) = (Mc + Ms) / (fck * col_width * col_depth * col_depth)
+
+Sheets("Calculation sheet").Cells(i + 5, 101).Value = (Mc + Ms) / (fck * col_width * col_depth * col_depth)
+Sheets("Calculation sheet").Cells(i + 5, 102).Value = (cc + cs) / (fck * col_width * col_depth)
+
+
+'Sheets("Curve").cells(i + 5, 13).Value = (Mc) / 1000000
+'Sheets("Curve").cells(i + 5, 14).Value = (Ms) / 1000000
+
+Next i
+
+
+'For i = 1 To bars_majorface
+'    Sheets("Curve").cells(i, 25).Value = majorlayers(i, 1)
+'    Sheets("Curve").cells(i, 26).Value = majorlayers(i, 2)
+'    Sheets("Curve").cells(i, 27).Value = majorlayers(i, 3)
+'    Sheets("Curve").cells(i, 28).Value = majorlayers(i, 4)
+'    Sheets("Curve").cells(i, 29).Value = majorlayers(i, 5)
+'    Sheets("Curve").cells(i, 30).Value = majorlayers(i, 6)
+'Next i
+
+MsgBox "DONE"
+
+For i = 1 To bars_majorface
+    Sheets("Curve").Cells(i, 20).Value = majorlayers(i, 1)
+    Sheets("Curve").Cells(i, 21).Value = majorlayers(i, 2)
+Next i
+End Sub
+
+
+
+Private Sub CommandButton3_Click()
+Sheets("Interaction values").Range("BK6").Value = 6
+
+'If Sheets("Interaction values").Range("BK5").Value = "" Then
+'    MsgBox "CLICK GENERATE VALUES FOR M2"
+'End If
+
+srange = Sheets("Interaction values").Range("D2").Value
+erange = Sheets("Interaction values").Range("D3").Value
+
+clabel = Sheets("Interaction values").Range("D6").Value
+flevel = Sheets("Interaction values").Range("D7").Value
+
+col_width = Sheets("Curve").Range("E5").Value
+col_depth = Sheets("Curve").Range("E4").Value
+
+clearcover = Sheets("Curve").Range("E6").Value
+sheardia = Sheets("Curve").Range("E7").Value
+mainbardia = Sheets("Curve").Range("E8").Value
+bars_minorface = Sheets("Curve").Range("E9").Value
+bars_majorface = Sheets("Curve").Range("E10").Value
+fck = Sheets("Curve").Range("E11").Value
+fy = Sheets("Curve").Range("E12").Value
+
+effectivecover = clearcover + sheardia + (mainbardia / 2)
+
+
+For i1 = srange To erange
+
+    If Sheets("Interaction values").Cells(i1, 2).Value = clabel And Sheets("Interaction values").Cells(i1, 3).Value = flevel Then
+
+        x = Sheets("Interaction values").Cells(i1, 39).Value
+        For i2 = 6 To 203
+            If Sheets("Curve").Cells(i2, 102).Value < x And Sheets("Curve").Cells(i2 + 1, 102).Value > x Then
+                x1 = Sheets("Curve").Cells(i2, 102).Value
+                x2 = Sheets("Curve").Cells(i2 + 1, 102).Value
+                y1 = Sheets("Curve").Cells(i2, 101).Value
+                y2 = Sheets("Curve").Cells(i2 + 1, 101).Value
+                y = y1 + ((y2 - y1) * (x - x1) / (x2 - x1))
+                Sheets("Interaction values").Cells(i1, 42).Value = 0
+            ElseIf Sheets("Curve").Cells(i2, 102).Value = x Then
+                y = Sheets("Curve").Cells(i2, 101).Value
+                Sheets("Interaction values").Cells(i1, 42).Value = 0
+            End If
+        Next i2
+        Sheets("Interaction values").Cells(i1, 43).Value = 0
+    End If
+Next i1
+
+MsgBox "DONE"
+
+End Sub
+
+Private Sub CommandButton4_Click()
+
+Sheets("Interaction values").Range("BK2").Value = 2
+
+If Sheets("Interaction values").Range("BK1").Value = "" Then
+    MsgBox "CLICK FETCH FORCES"
+End If
+
+srange = Sheets("Interaction values").Range("D2").Value
+erange = Sheets("Interaction values").Range("D3").Value
+
+clabel = Sheets("Interaction values").Range("D6").Value
+flevel = Sheets("Interaction values").Range("D7").Value
+Height = Sheets("Interaction values").Range("D8").Value
+keff = Sheets("Interaction values").Range("D9").Value
+col_depth = Sheets("Interaction values").Range("D10").Value
+col_width = Sheets("Interaction values").Range("D11").Value
+fck = Sheets("Interaction values").Range("D12").Value
+fy = Sheets("Interaction values").Range("D13").Value
+clearcover = Sheets("Interaction values").Range("D14").Value
+shearbar = Sheets("Interaction values").Range("D15").Value
+ptprovided = Sheets("Interaction values").Range("D16").Value
+bars_depth = Sheets("Interaction values").Range("D17").Value
+bars_width = Sheets("Interaction values").Range("D18").Value
+ecc_ext_major = Sheets("Interaction values").Range("D20").Value
+ecc_ext_minor = Sheets("Interaction values").Range("D21").Value
+ecc_acc_major = (Height / 500) + (col_depth / 30)
+ecc_acc_minor = (Height / 500) + (col_width / 30)
+
+ecc_major = ecc_ext_major + ecc_acc_major
+ecc_minor = ecc_ext_minor + ecc_acc_minor
+
+Total_bars = ((bars_depth + bars_width) * 2) - 4
+areaofsteel = ptprovided * col_width * col_depth / 100
+dia_mainbar = (areaofsteel * (4 / 3.1415) / Total_bars) ^ (0.5)
+
+
+For i1 = srange To erange
+    If Sheets("Interaction values").Cells(i1, 2).Value = clabel And Sheets("Interaction values").Cells(i1, 3).Value = flevel Then
+        Sheets("Interaction values").Cells(i1, 19).Value = Height
+        Sheets("Interaction values").Cells(i1, 20).Value = keff
+        Sheets("Interaction values").Cells(i1, 21).Value = col_depth
+        Sheets("Interaction values").Cells(i1, 22).Value = col_width
+        Sheets("Interaction values").Cells(i1, 24).Value = fck
+        Sheets("Interaction values").Cells(i1, 25).Value = fy
+        Sheets("Interaction values").Cells(i1, 26).Value = clearcover
+        Sheets("Interaction values").Cells(i1, 27).Value = shearbar
+        Sheets("Interaction values").Cells(i1, 34).Value = ptprovided
+        Sheets("Interaction values").Cells(i1, 37).Value = bars_depth
+        Sheets("Interaction values").Cells(i1, 36).Value = bars_width
+        Sheets("Interaction values").Cells(i1, 11).Value = Round(Sheets("Interaction values").Cells(i1, 6).Value * (ecc_acc_major / 1000), 2)
+        Sheets("Interaction values").Cells(i1, 15).Value = Round(Sheets("Interaction values").Cells(i1, 6).Value * (ecc_acc_minor / 1000), 2)
+        min_m3 = Round(Sheets("Interaction values").Cells(i1, 6).Value * (ecc_acc_major / 1000), 2)
+        min_m2 = Round(Sheets("Interaction values").Cells(i1, 6).Value * (ecc_acc_minor / 1000), 2)
+
+        ext_m3 = Round(Round(Sheets("Interaction values").Cells(i1, 6).Value * ecc_ext_major, 2) / 1000, 2)
+        ext_m2 = Round(Round(Sheets("Interaction values").Cells(i1, 6).Value * ecc_ext_minor, 2) / 1000, 2)
+        totalm3 = Sheets("Interaction values").Cells(i1, 8).Value + ext_m3
+        totalm2 = Sheets("Interaction values").Cells(i1, 7).Value + ext_m2
+        
+        If totalm3 > min_m3 Then
+            Sheets("Interaction values").Cells(i1, 12).Value = totalm3
+        Else
+            Sheets("Interaction values").Cells(i1, 12).Value = min_m3
+        End If
+        
+        If totalm2 > min_m2 Then
+            Sheets("Interaction values").Cells(i1, 16).Value = totalm2
+        Else
+            Sheets("Interaction values").Cells(i1, 16).Value = min_m2
+        End If
+    End If
+    
+Next i1
+
+Sheets("Curve").Range("E4").Value = Sheets("Interaction values").Range("D11").Value
+Sheets("Curve").Range("E5").Value = Sheets("Interaction values").Range("D10").Value
+Sheets("Curve").Range("E6").Value = Sheets("Interaction values").Range("D14").Value
+Sheets("Curve").Range("E7").Value = Sheets("Interaction values").Range("D15").Value
+Sheets("Curve").Range("E8").Value = dia_mainbar
+Sheets("Curve").Range("E9").Value = Sheets("Interaction values").Range("D18").Value
+Sheets("Curve").Range("E10").Value = Sheets("Interaction values").Range("D17").Value
+Sheets("Curve").Range("E11").Value = Sheets("Interaction values").Range("D12").Value
+Sheets("Curve").Range("E12").Value = Sheets("Interaction values").Range("D13").Value
+
+
+
+MsgBox "DONE"
+
+End Sub
+
+Private Sub CommandButton5_Click()
+Sheets("Interaction values").Range("BK4").Value = 4
+
+If Sheets("Interaction values").Range("BK3").Value = "" Then
+    MsgBox "CLICK GENERATE VALUES FOR M3"
+End If
+
+srange = Sheets("Interaction values").Range("D2").Value
+erange = Sheets("Interaction values").Range("D3").Value
+
+clabel = Sheets("Interaction values").Range("D6").Value
+flevel = Sheets("Interaction values").Range("D7").Value
+
+col_width = Sheets("Curve").Range("E4").Value
+col_depth = Sheets("Curve").Range("E5").Value
+
+clearcover = Sheets("Curve").Range("E6").Value
+sheardia = Sheets("Curve").Range("E7").Value
+mainbardia = Sheets("Curve").Range("E8").Value
+bars_minorface = Sheets("Curve").Range("E9").Value
+bars_majorface = Sheets("Curve").Range("E10").Value
+fck = Sheets("Curve").Range("E11").Value
+fy = Sheets("Curve").Range("E12").Value
+
+effectivecover = clearcover + sheardia + (mainbardia / 2)
+
+For i1 = srange To erange
+    Sheets("Interaction values").Cells(i1, 32).Value = WorksheetFunction.Round(Sheets("Curve").Range("E15").Value * fck, 2)
+
+    If Sheets("Interaction values").Cells(i1, 2).Value = clabel And Sheets("Interaction values").Cells(i1, 3).Value = flevel Then
+
+        x = Sheets("Interaction values").Cells(i1, 39).Value
+        For i2 = 6 To 203
+            If Sheets("Curve").Cells(i2, 102).Value < x And Sheets("Curve").Cells(i2 + 1, 102).Value > x Then
+                x1 = Sheets("Curve").Cells(i2, 102).Value
+                x2 = Sheets("Curve").Cells(i2 + 1, 102).Value
+                y1 = Sheets("Curve").Cells(i2, 101).Value
+                y2 = Sheets("Curve").Cells(i2 + 1, 101).Value
+                y = y1 + ((y2 - y1) * (x - x1) / (x2 - x1))
+                Sheets("Interaction values").Cells(i1, 40).Value = WorksheetFunction.Round(effectivecover / col_depth, 2)
+            ElseIf Sheets("Curve").Cells(i2, 102).Value = x Then
+                y = Sheets("Curve").Cells(i2, 101).Value
+                Sheets("Interaction values").Cells(i1, 40).Value = WorksheetFunction.Round(effectivecover / col_depth, 2)
+            End If
+        Next i2
+        Sheets("Interaction values").Cells(i1, 41).Value = WorksheetFunction.Round(y, 3)
+    End If
+Next i1
+MsgBox "DONE"
+
+End Sub
+
+Private Sub CommandButton6_Click()
+Sheets("Interaction values").Range("BK7").Value = 7
+
+If Sheets("Interaction values").Range("BK6").Value = "" Then
+    MsgBox "CLICK FILL M2 VALUES"
+End If
+
+srange = Sheets("Interaction values").Range("D2").Value
+erange1 = Sheets("Interaction values").Range("D3").Value
+clabel = Sheets("Interaction values").Range("D6").Value
+flevel = Sheets("Interaction values").Range("D7").Value
+
+Dim safety(10000, 1) As Variant
+Dim interactionvalues_alone(10000, 1) As Variant
+
+For i = srange To erange1
+    If Sheets("Interaction values").Cells(i + 1, 2) = 0 And Sheets("Interaction values").Cells(i, 2) <> 0 Then
+        k1 = i - 1
+    End If
+Next i
+
+erange = k1
+For i = srange To erange
+    If Sheets("Interaction values").Cells(i, 2).Value = clabel And Sheets("Interaction values").Cells(i, 3).Value = flevel Then
+        If Sheets("Interaction values").Cells(i, 49).Value = "UNSAFE" Then
+            safety(i, 1) = 0
+        ElseIf Sheets("Interaction values").Cells(i, 49) = "SAFE" Then
+            safety(i, 1) = 1
+        End If
+        interactionvalues_alone(i, 1) = Sheets("Interaction values").Cells(i, 48).Value
+    End If
+Next i
+
+A = WorksheetFunction.Min(safety)
+b = WorksheetFunction.Max(interactionvalues_alone)
+Sheets("Curve").Range("E19").Value = b
+For i = srange To erange
+    If Sheets("Interaction values").Cells(i, 48).Value = b And Sheets("Interaction values").Cells(i, 2).Value = clabel And Sheets("Interaction values").Cells(i, 3).Value = flevel Then
+        Sheets("Curve").Range("E21").Value = Sheets("Interaction values").Cells(i, 5)
+        Sheets("Calculation sheet").Range("I44").Value = Sheets("Interaction values").Cells(i, 6)
+        Sheets("Calculation sheet").Range("I45").Value = Sheets("Interaction values").Cells(i, 16)
+        Sheets("Calculation sheet").Range("I46").Value = Sheets("Interaction values").Cells(i, 12)
+        Sheets("Calculation sheet").Range("I47").Value = Sheets("Interaction values").Cells(i, 46)
+        Sheets("Calculation sheet").Range("I48").Value = Sheets("Interaction values").Cells(i, 45)
+        Sheets("Calculation sheet").Range("I49").Value = Sheets("Interaction values").Cells(i, 44)
+    End If
+Next i
+    
+If A = 0 Then
+        MsgBox "Change Pt"
+        Sheets("Curve").Range("E18").Value = "CHANGE Pt"
+    ElseIf A = 1 Then
+        pt = Sheets("Interaction values").Range("D16").Value
+        Sheets("Curve").Range("E18").Value = pt
+        MsgBox "COLUMN IS SAFE"
+End If
+MsgBox "DONE"
+
+End Sub
+
+Private Sub CommandButton7_Click()
+Sheets("Interaction values").Range("BK8").Value = 8
+
+If Sheets("Interaction values").Range("BK7").Value = "" Then
+    MsgBox "CLICK CHECK SAFETY AND PICK Pt"
+End If
+
+Sheets("Calculation sheet").Activate
+End Sub
+
+Private Sub CommandButton8_Click()
+
+Sheets("Interaction values").Range("BK1:BK10").ClearContents
+
+Sheets("Interaction values").Range("BK1").Value = 1
+
+Sheets("Interaction values").Range("D3").Value = 1000
+srange1 = Sheets("Interaction values").Range("D2").Value
+erange1 = Sheets("Interaction values").Range("D3").Value
+
+srange = Sheets("Forces").Range("P2").Value
+erange = Sheets("Forces").Range("P3").Value
+
+Sheets("Interaction values").Range(Cells(srange1, 2), Cells(erange1, 8)).ClearContents
+Sheets("Interaction values").Range(Cells(srange1, 19), Cells(erange1, 22)).ClearContents
+Sheets("Interaction values").Range(Cells(srange1, 24), Cells(erange1, 27)).ClearContents
+Sheets("Interaction values").Range(Cells(srange1, 34), Cells(erange1, 34)).ClearContents
+Sheets("Interaction values").Range(Cells(srange1, 36), Cells(erange1, 37)).ClearContents
+
+Sheets("Calculation sheet").Range("CW6:CZ1000").Clear
+'Sheets("Calculation sheet").Range(Cells(6, 101), Cells(1000, 104)).ClearContents
+
+floorlevel = Sheets("Interaction values").Range("D7").Value
+columname = Sheets("Interaction values").Range("D6").Value
+
+ReDim forces(10000, 11) As Variant
+
+factor = 1
+For i = srange To erange
+    If Sheets("Forces").Cells(i, 1) = floorlevel And Sheets("Forces").Cells(i, 2) = columname Then
+        forces(factor, 1) = Sheets("Forces").Cells(i, 1).Value
+        forces(factor, 2) = Sheets("Forces").Cells(i, 2).Value
+        forces(factor, 3) = Sheets("Forces").Cells(i, 3).Value
+        forces(factor, 4) = Sheets("Forces").Cells(i, 4).Value
+        forces(factor, 5) = Sheets("Forces").Cells(i, 5).Value
+        forces(factor, 6) = Sheets("Forces").Cells(i, 6).Value
+        forces(factor, 7) = Sheets("Forces").Cells(i, 7).Value
+        forces(factor, 8) = Sheets("Forces").Cells(i, 8).Value
+        forces(factor, 9) = Sheets("Forces").Cells(i, 9).Value
+        forces(factor, 10) = Sheets("Forces").Cells(i, 10).Value
+        forces(factor, 11) = Sheets("Forces").Cells(i, 11).Value
+        factor = factor + 1
+    End If
+
+Next i
+srange_iv = Sheets("Interaction values").Range("D2").Value
+erange_iv = Sheets("Interaction values").Range("D3").Value
+
+factor = 1
+For i1 = srange_iv To erange_iv
+    If forces(factor, 6) <> 0 Then
+        Sheets("Interaction values").Cells(i1, 2) = forces(factor, 2)
+        Sheets("Interaction values").Cells(i1, 3) = forces(factor, 1)
+        Sheets("Interaction values").Cells(i1, 4) = forces(factor, 2)
+        Sheets("Interaction values").Cells(i1, 5) = forces(factor, 4)
+        Sheets("Interaction values").Cells(i1, 6) = Abs(forces(factor, 6))
+        Sheets("Interaction values").Cells(i1, 7) = Abs(forces(factor, 10))
+        Sheets("Interaction values").Cells(i1, 8) = Abs(forces(factor, 11))
+        factor = factor + 1
+    End If
+Next i1
+
+For i = srange_iv To erange_iv
+    If Sheets("Interaction values").Cells(i, 2) <> 0 And Sheets("Interaction values").Cells(i + 1, 2) = 0 Then
+        erange2 = i
+    End If
+Next i
+Sheets("Interaction values").Range("D3").Value = erange2
+MsgBox "DONE"
+
+End Sub
+
+
+Private Sub CommandButton9_Click()
+Sheets("Interaction values").Range("BK9").Value = 9
+
+If Sheets("Interaction values").Range("BK8").Value = "" Then
+    MsgBox "CLICK CALCULATIO SHEET"
+End If
+
+srange = Sheets("Summary").Range("D1").Value
+erange = Sheets("Summary").Range("D2").Value
+
+floorlevel = Sheets("Interaction values").Range("D7").Value
+columname = Sheets("Interaction values").Range("D6").Value
+
+For i = srange To erange
+    If Sheets("Summary").Cells(i, 1).Value = floorlevel And Sheets("Summary").Cells(i, 2).Value = columname Then
+        Sheets("Summary").Cells(i, 3).Value = Sheets("Interaction values").Range("D8").Value
+        Sheets("Summary").Cells(i, 4).Value = Sheets("Interaction values").Range("D9").Value
+        Sheets("Summary").Cells(i, 5).Value = Sheets("Interaction values").Range("D10").Value
+        Sheets("Summary").Cells(i, 6).Value = Sheets("Interaction values").Range("D11").Value
+        Sheets("Summary").Cells(i, 7).Value = Sheets("Interaction values").Range("D12").Value
+        Sheets("Summary").Cells(i, 8).Value = Sheets("Interaction values").Range("D13").Value
+        Sheets("Summary").Cells(i, 9).Value = Sheets("Interaction values").Range("D14").Value
+        Sheets("Summary").Cells(i, 10).Value = Sheets("Interaction values").Range("D15").Value
+        Sheets("Summary").Cells(i, 11).Value = Sheets("Calculation sheet").Range("J20").Value
+        Sheets("Summary").Cells(i, 12).Value = Sheets("Interaction values").Range("D17").Value
+        Sheets("Summary").Cells(i, 13).Value = Sheets("Interaction values").Range("D18").Value
+        Sheets("Summary").Cells(i, 14).Value = Sheets("Calculation sheet").Range("J17").Value
+        Sheets("Summary").Cells(i, 15).Value = Sheets("Calculation sheet").Range("D20").Value
+        Sheets("Summary").Cells(i, 16).Value = Sheets("Calculation sheet").Range("D21").Value
+        
+        Sheets("Summary").Cells(i, 17).Value = Sheets("Calculation sheet").Range("K42").Value
+        Sheets("Summary").Cells(i, 18).Value = Sheets("Calculation sheet").Range("I44").Value
+        Sheets("Summary").Cells(i, 19).Value = Sheets("Calculation sheet").Range("I45").Value
+        Sheets("Summary").Cells(i, 20).Value = Sheets("Calculation sheet").Range("I46").Value
+        Sheets("Summary").Cells(i, 21).Value = Sheets("Calculation sheet").Range("I47").Value
+        Sheets("Summary").Cells(i, 22).Value = Sheets("Calculation sheet").Range("I48").Value
+        Sheets("Summary").Cells(i, 23).Value = Sheets("Calculation sheet").Range("I49").Value
+        Sheets("Summary").Cells(i, 24).Value = Sheets("Calculation sheet").Range("G42").Value
+        iv = Sheets("Calculation sheet").Range("G42").Value
+        If iv <= 1 Then
+            Sheets("Summary").Cells(i, 24).Value = iv
+            Sheets("Summary").Cells(i, 26).Value = "SAFE"
+        Else
+            Sheets("Summary").Cells(i, 24).Value = iv
+            Sheets("Summary").Cells(i, 26).Value = "UNSAFE"
+        End If
+        Sheets("Summary").Cells(i, 25).Value = Sheets("Calculation sheet").Range("F50").Value
+        
+    End If
+Next i
+
+Path = Sheets("Calculation sheet").Range("P3").Value
+blabel = Sheets("Calculation sheet").Range("J4").Value
+file = Path & "\" & blabel & ".PDF"
+'Sheets("Calculation sheet").ExportAsFixedFormat Type:=xlTypePDF, Filename:=file, qualtiy:=xlQualityStandard, openafterpublish:=True
+Sheets("Calculation sheet").ExportAsFixedFormat Type:=xlTypePDF, Filename:=file, Quality:=xlQualityStandard, OpenAfterPublish:=False
+MsgBox "DONE"
+
+End Sub
+-------------------------------------------------------------------------------
+VBA MACRO Module1.bas 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Module1'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+(empty macro)
+-------------------------------------------------------------------------------
+VBA MACRO Module2.bas 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Module2'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+(empty macro)
+-------------------------------------------------------------------------------
+VBA MACRO Sheet3.cls 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Sheet3'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Private Sub CommandButton1_Click()
+Path = Sheets("Calculation sheet").Range("P3").Value
+blabel = Sheets("Calculation sheet").Range("J4").Value
+file = Path & "\" & blabel & ".PDF"
+'Sheets("Calculation sheet").ExportAsFixedFormat Type:=xlTypePDF, Filename:=file, qualtiy:=xlQualityStandard, openafterpublish:=True
+Sheets("Calculation sheet").ExportAsFixedFormat Type:=xlTypePDF, Filename:=file, Quality:=xlQualityStandard, OpenAfterPublish:=True
+
+End Sub
+
+Private Sub CommandButton2_Click()
+Sheets("Interaction values").Activate
+End Sub
+-------------------------------------------------------------------------------
+VBA MACRO Sheet4.cls 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Sheet4'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Private Sub CommandButton1_Click()
+
+End Sub
+
+Private Sub CommandButton2_Click()
+srange = Sheets("Forces").Range("P2").Value
+erange = Sheets("Forces").Range("P3").Value
+
+Range(Cells(srange, 1), Cells(erange, 11)).Clear
+
+End Sub
+-------------------------------------------------------------------------------
+VBA MACRO Sheet5.cls 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Sheet5'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Private Sub CommandButton1_Click()
+srange = Sheets("Summary").Range("D1").Value
+erange = Sheets("Summary").Range("D2").Value
+
+Range(Cells(srange, 1), Cells(erange, 27)).Clear
+
+End Sub
+-------------------------------------------------------------------------------
+VBA MACRO Sheet6.cls 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Sheet6'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+(empty macro)
+-------------------------------------------------------------------------------
+VBA MACRO Sheet7.cls 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Sheet7'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Private Sub CommandButton1_Click()
+Dim ptvalues(10, 1)
+flevel = Sheets("ETABS pt").Range("P4").Value
+clabel = Sheets("ETABS pt").Range("P5").Value
+
+srange = Sheets("ETABS pt").Range("P6").Value
+erange = Sheets("ETABS pt").Range("P7").Value
+
+k = k + 1
+For i = srange To erange
+    If Sheets("ETABS pt").Cells(i, 2) = flevel And Sheets("ETABS pt").Cells(i, 1) = clabel Then
+
+        ptvalues(k, 1) = Sheets("ETABS pt").Cells(i, 10).Value
+        k = k + 1
+    End If
+Next i
+
+Range("N13").Value = flevel
+Range("O13").Value = clabel
+Range("P13").Value = "="
+Range("Q13").Value = WorksheetFunction.Max(ptvalues)
+ptmax = WorksheetFunction.Max(ptvalues)
+
+srange1 = Sheets("Summary").Range("D1").Value
+erange1 = Sheets("Summary").Range("D2").Value
+
+For i = srange1 To erange1
+    If Sheets("Summary").Cells(i, 1) = flevel And Sheets("Summary").Cells(i, 2) = clabel Then
+        Sheets("Summary").Cells(i, 27) = ptmax
+        Sheets("Summary").Cells(i, 11) = ptmax
+    End If
+Next i
+
+MsgBox "DONE"
+End Sub
+
+
+Private Sub CommandButton2_Click()
+srange = Sheets("Summary").Range("D1").Value
+erange = Sheets("Summary").Range("D2").Value
+
+flevel = Sheets("ETABS pt").Range("P4").Value
+cname = Sheets("ETABS pt").Range("P5").Value
+
+For i = srange To erange
+    If Sheets("Summary").Cells(i, 1) = flevel And Sheets("Summary").Cells(i, 2) = cname And Sheets("Summary").Cells(i - 1, 2) <> "COLUMN LABEL" Then
+        Sheets("ETABS pt").Range("P4").Value = Sheets("Summary").Cells(i - 1, 1)
+        Sheets("ETABS pt").Range("P5").Value = Sheets("Summary").Cells(i - 1, 2)
+    ElseIf Sheets("Summary").Cells(i, 1) = flevel And Sheets("Summary").Cells(i, 2) = cname And Sheets("Summary").Cells(i - 1, 2) = "COLUMN LABEL" Then
+        Sheets("ETABS pt").Range("P4").Value = Sheets("Summary").Cells(i, 1)
+        Sheets("ETABS pt").Range("P5").Value = Sheets("Summary").Cells(i, 2)
+        MsgBox "START LABEL"
+    End If
+Next i
+MsgBox "DONE"
+End Sub
+
+Private Sub CommandButton3_Click()
+srange = Sheets("Summary").Range("D1").Value
+erange = Sheets("Summary").Range("D2").Value
+
+flevel = Sheets("ETABS pt").Range("P4").Value
+cname = Sheets("ETABS pt").Range("P5").Value
+
+For i = srange To erange
+    If Sheets("Summary").Cells(i, 1) = flevel And Sheets("Summary").Cells(i, 2) = cname And Sheets("Summary").Cells(i + 1, 2) <> 0 Then
+        Sheets("ETABS pt").Range("P4").Value = Sheets("Summary").Cells(i + 1, 1)
+        Sheets("ETABS pt").Range("P5").Value = Sheets("Summary").Cells(i + 1, 2)
+    ElseIf Sheets("Summary").Cells(i, 1) = flevel And Sheets("Summary").Cells(i, 2) = cname And Sheets("Summary").Cells(i - 1, 2) = 0 Then
+        Sheets("ETABS pt").Range("P4").Value = Sheets("Summary").Cells(i, 1)
+        Sheets("ETABS pt").Range("P5").Value = Sheets("Summary").Cells(i, 2)
+        MsgBox "END LABEL"
+    End If
+Next i
+MsgBox "DONE"
+End Sub
+-------------------------------------------------------------------------------
+VBA MACRO Sheet8.cls 
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Sheet8'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Private Sub CommandButton1_Click()
+Sheets("Extraction of pt").Range("K10:K11").ClearContents
+srange1 = Sheets("Summary").Range("D1").Value
+erange1 = Sheets("Summary").Range("D2").Value
+
+flevel = Sheets("Extraction of pt").Range("K4").Value
+clabel = Sheets("Extraction of pt").Range("K5").Value
+
+For i = srange1 To erange1
+    If Sheets("Summary").Cells(i, 1).Value = flevel And Sheets("Summary").Cells(i, 2).Value = clabel Then
+        etabspt = Sheets("Summary").Cells(i, 27).Value
+        meteypt = Sheets("Summary").Cells(i, 28).Value
+    End If
+Next i
+
+Sheets("Extraction of pt").Range("K10").Value = etabspt
+Sheets("Extraction of pt").Range("K11").Value = meteypt
+
+srange = Sheets("Extraction of pt").Range("K2").Value
+erange = Sheets("Extraction of pt").Range("K3").Value
+For i = srange To erange + 1
+    If Sheets("Extraction of pt").Cells(i, 1).Value = flevel And Sheets("Extraction of pt").Cells(i, 2).Value = clabel Then
+       Sheets("Extraction of pt").Cells(i, 3).Value = etabspt
+       Sheets("Extraction of pt").Cells(i, 4).Value = meteypt
+    End If
+Next i
+
+
+End Sub
+
+Private Sub CommandButton2_Click()
+srange = Range("K2").Value
+erange = Range("K3").Value
+
+flevel = Range("K4").Value
+clabel = Range("K5").Value
+For i = srange To erange + 1
+    If Cells(i, 1).Value = flevel And Cells(i, 2).Value = clabel Then
+        Range("K4").Value = Cells(i - 1, 1).Value
+        Range("K5").Value = Cells(i - 1, 2).Value
+    End If
+Next i
+End Sub
+
+Private Sub CommandButton3_Click()
+srange = Range("K2").Value
+erange = Range("K3").Value
+
+flevel = Range("K4").Value
+clabel = Range("K5").Value
+For i = srange To erange + 1
+    If Cells(i, 1).Value = flevel And Cells(i, 2).Value = clabel Then
+        Range("K4").Value = Cells(i + 1, 1).Value
+        Range("K5").Value = Cells(i + 1, 2).Value
+    End If
+Next i
+
+End Sub
++----------+--------------------+---------------------------------------------+
+|Type      |Keyword             |Description                                  |
++----------+--------------------+---------------------------------------------+
+|AutoExec  |CommandButton1_Click|Runs when the file is opened and ActiveX     |
+|          |                    |objects trigger events                       |
+|Suspicious|Hex Strings         |Hex-encoded strings were detected, may be    |
+|          |                    |used to obfuscate strings (option --decode to|
+|          |                    |see all)                                     |
+|Suspicious|Base64 Strings      |Base64-encoded strings were detected, may be |
+|          |                    |used to obfuscate strings (option --decode to|
+|          |                    |see all)                                     |
++----------+--------------------+---------------------------------------------+
+

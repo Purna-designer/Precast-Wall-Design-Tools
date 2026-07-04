@@ -14,9 +14,6 @@ namespace PrecastConnectionApp.Core.Engine
 
     public static class InteractionCurveGenerator
     {
-        private static readonly double[] SteelStrainNodes = { 0, 0.00174, 0.00195, 0.00226, 0.00277, 0.00312, 0.00417, 0.1 };
-        private static readonly double[] SteelStressNodes = { 0, 347.8, 369.6, 391.3, 413.0, 423.9, 434.8, 434.8 };
-
         public static List<PMPoint> Generate(SectionProperties props)
         {
             var layers = ReinforcementLayout.CalculateLayers(props);
@@ -26,9 +23,13 @@ namespace PrecastConnectionApp.Core.Engine
             double D = props.Depth;
             double fck = props.Fck;
 
-            for (int i = 0; i <= 199; i++)
+            double initialValue = -0.05 * D;
+            double finalValue = 10 * D;
+            double stepValue = (finalValue - initialValue) / 199.0;
+
+            for (int i = 1; i <= 199; i++)
             {
-                double xu = -0.01 * D + i * (10.01 * D) / 199.0;
+                double xu = initialValue + i * stepValue;
                 if (Math.Abs(xu) < 1e-6) xu = 1e-6; // Avoid division by zero
 
                 double a, xBar;
@@ -97,17 +98,34 @@ namespace PrecastConnectionApp.Core.Engine
 
             if (absStrain > 0.0035 && sign < 0) return -0.87 * fy;
 
-            double maxDesignStress = 0.87 * fy;
-            double scale = maxDesignStress / 434.8; // Base it off Fe500 predefined array
+            double[] strainNodes;
+            double[] stressNodes;
 
-            for (int i = 0; i < SteelStrainNodes.Length - 1; i++)
+            if (Math.Abs(fy - 500.0) < 1.0)
             {
-                if (absStrain >= SteelStrainNodes[i] && absStrain <= SteelStrainNodes[i + 1])
+                // Fe 500 nodes from exact table
+                strainNodes = new double[] { 0.0, 0.00174, 0.00195, 0.00226, 0.00277, 0.00312, 0.00417, 0.1 };
+                stressNodes = new double[] { 0.0, 347.8, 369.6, 391.3, 413.0, 423.9, 434.8, 434.8 };
+            }
+            else
+            {
+                // Fe 415 nodes from exact table (used as default/fallback)
+                strainNodes = new double[] { 0.0, 0.00144, 0.00163, 0.00192, 0.00241, 0.00276, 0.00380, 0.1 };
+                stressNodes = new double[] { 0.0, 288.7, 306.7, 324.8, 342.8, 351.8, 360.9, 360.9 };
+            }
+
+            double maxDesignStress = stressNodes[6]; // Max stress is at index 6
+
+            for (int i = 0; i < strainNodes.Length - 1; i++)
+            {
+                if (absStrain >= strainNodes[i] && absStrain <= strainNodes[i + 1])
                 {
-                    double x0 = SteelStrainNodes[i];
-                    double x1 = SteelStrainNodes[i + 1];
-                    double y0 = SteelStressNodes[i] * scale;
-                    double y1 = SteelStressNodes[i + 1] * scale;
+                    double x0 = strainNodes[i];
+                    double x1 = strainNodes[i + 1];
+                    double y0 = stressNodes[i];
+                    double y1 = stressNodes[i + 1];
+
+                    if (x1 == x0) return sign * y0;
 
                     double stress = y0 + (y1 - y0) * (absStrain - x0) / (x1 - x0);
                     return sign * stress;

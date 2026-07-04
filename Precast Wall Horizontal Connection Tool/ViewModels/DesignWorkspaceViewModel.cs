@@ -3,17 +3,13 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PrecastConnectionApp.Models;
 using PrecastConnectionApp.Core.Engine;
-using PrecastConnectionApp.Services;
 using OxyPlot;
 using OxyPlot.Series;
 using OxyPlot.Axes;
-using OxyPlot.Annotations;
-using OxyPlot.Annotations;
 
 namespace PrecastConnectionApp.ViewModels
 {
@@ -119,12 +115,20 @@ namespace PrecastConnectionApp.ViewModels
 
         private bool FilterCombinations(object obj)
         {
-            if (string.IsNullOrWhiteSpace(SearchText)) return true;
-            if (obj is ForceItem force)
+            if (obj is not ForceItem force) return false;
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                return force.OutputCase?.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+                if (force.OutputCase?.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    return false;
+                }
             }
-            return false;
+
+            if (SelectedStatusFilter == "Safe" && !force.IsSafe) return false;
+            if (SelectedStatusFilter == "Unsafe" && force.IsSafe) return false;
+
+            return true;
         }
 
         private void Section_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -142,6 +146,21 @@ namespace PrecastConnectionApp.ViewModels
             {
                 CurrentWall = null;
             }
+            UpdateCounts();
+        }
+
+        private void UpdateCounts()
+        {
+            if (CurrentWall?.LoadCombinations != null)
+            {
+                TotalCombinationsCount = CurrentWall.LoadCombinations.Count;
+                SafeCombinationsCount = CurrentWall.LoadCombinations.Count(c => c.IsSafe);
+            }
+            else
+            {
+                TotalCombinationsCount = 0;
+                SafeCombinationsCount = 0;
+            }
         }
 
         public IRelayCommand RunCommand { get; }
@@ -152,6 +171,7 @@ namespace PrecastConnectionApp.ViewModels
         public IRelayCommand ToggleOverrideCommand { get; }
         public IRelayCommand CancelOverrideCommand { get; }
         public IRelayCommand ApplyOverrideCommand { get; }
+        public IRelayCommand ToggleFilterPopupCommand { get; }
 
         private bool _showOverridePanel;
         public bool ShowOverridePanel
@@ -172,6 +192,61 @@ namespace PrecastConnectionApp.ViewModels
         {
             get => _isOverrideInputVisible;
             set => SetProperty(ref _isOverrideInputVisible, value);
+        }
+
+        private int _totalCombinationsCount;
+        public int TotalCombinationsCount
+        {
+            get => _totalCombinationsCount;
+            set => SetProperty(ref _totalCombinationsCount, value);
+        }
+
+        private int _safeCombinationsCount;
+        public int SafeCombinationsCount
+        {
+            get => _safeCombinationsCount;
+            set => SetProperty(ref _safeCombinationsCount, value);
+        }
+
+        private bool _isFilterPopupOpen;
+        public bool IsFilterPopupOpen
+        {
+            get => _isFilterPopupOpen;
+            set => SetProperty(ref _isFilterPopupOpen, value);
+        }
+
+        private string _selectedStatusFilter = "All";
+        public string SelectedStatusFilter
+        {
+            get => _selectedStatusFilter;
+            set
+            {
+                if (SetProperty(ref _selectedStatusFilter, value))
+                {
+                    OnPropertyChanged(nameof(IsFilterAll));
+                    OnPropertyChanged(nameof(IsFilterSafe));
+                    OnPropertyChanged(nameof(IsFilterUnsafe));
+                    LoadCombinationsView?.Refresh();
+                }
+            }
+        }
+
+        public bool IsFilterAll
+        {
+            get => SelectedStatusFilter == "All";
+            set { if (value) SelectedStatusFilter = "All"; }
+        }
+        
+        public bool IsFilterSafe
+        {
+            get => SelectedStatusFilter == "Safe";
+            set { if (value) SelectedStatusFilter = "Safe"; }
+        }
+        
+        public bool IsFilterUnsafe
+        {
+            get => SelectedStatusFilter == "Unsafe";
+            set { if (value) SelectedStatusFilter = "Unsafe"; }
         }
 
         private PlotModel _plotModel;
@@ -220,6 +295,7 @@ namespace PrecastConnectionApp.ViewModels
             ToggleOverrideCommand = new RelayCommand(ToggleOverride);
             CancelOverrideCommand = new RelayCommand(CancelOverride);
             ApplyOverrideCommand = new RelayCommand(ApplyOverride);
+            ToggleFilterPopupCommand = new RelayCommand(() => IsFilterPopupOpen = !IsFilterPopupOpen);
 
             InitializePipeline();
             InitializePlot();
@@ -277,9 +353,10 @@ namespace PrecastConnectionApp.ViewModels
 
             if (DesignPipeline.Count > 4) DesignPipeline[4].IsActive = true;
 
-            var model = new PlotModel { Title = IsMajorAxis ? "PM Interaction Curve (Major Axis)" : "PM Interaction Curve (Minor Axis)" };
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "Moment (kNm)" });
-            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Axial Load (kN)" });
+            var model = new PlotModel { Title = IsMajorAxis ? "PM INTERACTION CURVE ALONG D" : "PM INTERACTION CURVE ALONG B" };
+            string xAxisTitle = IsMajorAxis ? "Mu / Fck B D^2" : "Mu / Fck D B^2";
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = xAxisTitle });
+            model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Pu / Fck B D" });
 
             var curveProps = new SectionProperties
             {
@@ -290,8 +367,7 @@ namespace PrecastConnectionApp.ViewModels
                 ClearCover = CurrentWall.Section.ClearCover,
                 NumMinorBars = CurrentWall.Section.NumMinorBars,
                 NumMajorBars = CurrentWall.Section.NumMajorBars,
-                MainBarDia = CurrentWall.Section.MainBarDia,
-                ShearBarDia = CurrentWall.Section.ShearBarDia
+                PercentageSteel = CurrentWall.Section.PercentageSteel
             };
             var points = InteractionCurveGenerator.Generate(curveProps);
 
@@ -306,7 +382,7 @@ namespace PrecastConnectionApp.ViewModels
 
                 foreach (var pt in points)
                 {
-                    series.Points.Add(new DataPoint(pt.M / 1e6, pt.P / 1000.0));
+                    series.Points.Add(new DataPoint(pt.NormalizedM, pt.NormalizedP));
                 }
 
                 model.Series.Add(series);
@@ -323,6 +399,10 @@ namespace PrecastConnectionApp.ViewModels
                     MarkerFill = OxyColors.DarkRed
                 };
 
+                double fck = curveProps.Fck;
+                double b = curveProps.Width;
+                double d = curveProps.Depth;
+
                 foreach (var combo in CurrentWall.LoadCombinations)
                 {
                     double p = Math.Abs(combo.P); // P is compression
@@ -335,13 +415,21 @@ namespace PrecastConnectionApp.ViewModels
 
                     // Plot the governed moment instead of raw ETABS moment to reflect the IS 456 eccentricities
                     double m = IsMajorAxis ? combo.GovM3 : combo.GovM2;
-                    demandSeries.Points.Add(new ScatterPoint(Math.Abs(m), p));
+                    
+                    // Normalize demands
+                    // m is in kN-m, convert to N-mm: m * 1e6
+                    // p is in kN, convert to N: p * 1000
+                    double normalizedDemandM = (Math.Abs(m) * 1e6) / (fck * b * Math.Pow(d, 2));
+                    double normalizedDemandP = (p * 1000) / (fck * b * d);
+                    
+                    demandSeries.Points.Add(new ScatterPoint(normalizedDemandM, normalizedDemandP));
                 }
                 model.Series.Add(demandSeries);
             }
 
             PlotModel = model;
             UpdateDemandPoint();
+            UpdateCounts();
         }
 
         private void UpdateDemandPoint()
@@ -367,7 +455,15 @@ namespace PrecastConnectionApp.ViewModels
                 };
                 double m = IsMajorAxis ? SelectedLoadCombination.GovM3 : SelectedLoadCombination.GovM2;
                 double p = Math.Abs(SelectedLoadCombination.P);
-                highlightSeries.Points.Add(new ScatterPoint(Math.Abs(m), p));
+                
+                double fck = CurrentWall.Section.Fck;
+                double b = IsMajorAxis ? CurrentWall.Section.Width : CurrentWall.Section.Depth;
+                double d = IsMajorAxis ? CurrentWall.Section.Depth : CurrentWall.Section.Width;
+                
+                double normalizedDemandM = (Math.Abs(m) * 1e6) / (fck * b * Math.Pow(d, 2));
+                double normalizedDemandP = (p * 1000) / (fck * b * d);
+                
+                highlightSeries.Points.Add(new ScatterPoint(normalizedDemandM, normalizedDemandP));
                 PlotModel.Series.Add(highlightSeries);
             }
 

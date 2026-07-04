@@ -16,7 +16,6 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
         <!-- Header Section -->
@@ -66,190 +65,254 @@
         </StackPanel>
 
         <!-- Main Workspace Two Columns -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="16"/>
-                <ColumnDefinition Width="500"/>
-            </Grid.ColumnDefinitions>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="500"/>
+                </Grid.ColumnDefinitions>
 
-            <!-- Left Column: Inputs & Data -->
-            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
-                <StackPanel>
-                    
-                    <!-- Section Geometry Panel -->
-                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16">
-                        <StackPanel>
-                            <!-- Panel Header -->
-                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12" Background="Transparent">
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="Section geometry &amp; reinforcement" FontSize="14" FontWeight="SemiBold" FontFamily="Space Grotesk"/>
-                                    <TextBlock Text="Confirm dimensions before generating curve" FontSize="12" Foreground="{StaticResource Theme.Muted}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                            </Border>
-                            
-                            <!-- Panel Body -->
-                            <Grid Margin="16">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                <!-- Left Column: Inputs & Data -->
+                <ScrollViewer Grid.Row="0" Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0" MaxHeight="{Binding ActualHeight, ElementName=RightColumnBorder}">
+                    <StackPanel Margin="0,0,8,0">
 
-                                <!-- Row 0 -->
-                                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,12">
-                                    <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
-                                        <TextBlock Text="Width (B)" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
-                                        <TextBlock Text="mm" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
-                                    </Grid>
-                                    <TextBox Text="{Binding CurrentWall.Section.Width, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,12">
-                                    <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
-                                        <TextBlock Text="Depth (D)" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
-                                        <TextBlock Text="mm" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
-                                    </Grid>
-                                    <TextBox Text="{Binding CurrentWall.Section.Depth, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,12">
-                                    <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
-                                        <TextBlock Text="Clear cover" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
-                                        <TextBlock Text="mm" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
-                                    </Grid>
-                                    <TextBox Text="{Binding CurrentWall.Section.ClearCover, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
-                                </StackPanel>
+                        <!-- Section Geometry Panel -->
+                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16">
+                            <StackPanel>
+                                <!-- Panel Header -->
+                                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12" Background="Transparent">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Section geometry &amp; reinforcement" FontSize="14" FontWeight="SemiBold" FontFamily="Space Grotesk"/>
+                                        <TextBlock Text="Confirm dimensions before generating curve" FontSize="12" Foreground="{StaticResource Theme.Muted}" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
 
-                                <!-- Row 1 -->
-                                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
-                                    <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
-                                        <TextBlock Text="Main bar dia" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
-                                        <TextBlock Text="mm" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
-                                    </Grid>
-                                    <TextBox Text="{Binding CurrentWall.Section.MainBarDia, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
-                                    <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
-                                        <TextBlock Text="Bars - depth face" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
-                                        <TextBlock Text="No's" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
-                                    </Grid>
-                                    <TextBox Text="{Binding CurrentWall.Section.NumMajorBars, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12">
-                                    <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
-                                        <TextBlock Text="Bars - width face" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
-                                        <TextBlock Text="No's" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
-                                    </Grid>
-                                    <TextBox Text="{Binding CurrentWall.Section.NumMinorBars, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
-                                </StackPanel>
+                                <!-- Panel Body -->
+                                <Grid Margin="16">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <!-- Row 2 -->
-                                <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
-                                    <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
-                                        <TextBlock Text="Grade - fck" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
-                                        <TextBlock Text="MPa" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
-                                    </Grid>
-                                    <TextBox Text="{Binding CurrentWall.Section.Fck, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
-                                    <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
-                                        <TextBlock Text="Grade - fy" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
-                                        <TextBlock Text="MPa" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
-                                    </Grid>
-                                    <TextBox Text="{Binding CurrentWall.Section.Fy, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
-                                    <!-- Moved Pt Slider to right column below chart -->
-                                </StackPanel>
+                                    <!-- Row 0 -->
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Width (B)" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="mm" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <TextBox Text="{Binding CurrentWall.Section.Width, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Depth (D)" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="mm" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <TextBox Text="{Binding CurrentWall.Section.Depth, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Clear cover" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="mm" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <TextBox Text="{Binding CurrentWall.Section.ClearCover, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
+                                    </StackPanel>
 
-                                <!-- Row 3: Action Button -->
-                                <Button Grid.Row="3" Grid.Column="3" Content="Perform Calculations" Command="{Binding RunCommand}"
-                                        Style="{StaticResource PrimaryActionButtonStyle}" Width="160" HorizontalAlignment="Left"/>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
+                                    <!-- Row 1 -->
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Bars - depth face" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="No's" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <TextBox Text="{Binding CurrentWall.Section.NumMajorBars, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Bars - width face" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="No's" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <TextBox Text="{Binding CurrentWall.Section.NumMinorBars, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Grade - fck" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="MPa" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <TextBox Text="{Binding CurrentWall.Section.Fck, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
+                                    </StackPanel>
 
-                    <!-- Design Pipeline Panel -->
-                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16">
-                        <StackPanel>
-                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12" Background="Transparent">
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="Design pipeline" FontSize="14" FontWeight="SemiBold" FontFamily="Space Grotesk"/>
-                                    <TextBlock Text="Review calculation progress" FontSize="12" Foreground="{StaticResource Theme.Muted}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                            </Border>
-                            <ItemsControl ItemsSource="{Binding DesignPipeline}" Margin="16,12">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="0,0,0,12">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Border Width="20" Height="20" CornerRadius="10" BorderThickness="1" Margin="0,0,10,0" VerticalAlignment="Top"
+                                    <!-- Row 2 -->
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Grade - fy" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="MPa" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <ComboBox SelectedValue="{Binding CurrentWall.Section.Fy, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Style="{StaticResource {x:Type ComboBox}}" Width="160" HorizontalAlignment="Left">
+                                            <ComboBoxItem Content="415"/>
+                                            <ComboBoxItem Content="500"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Height of wall" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="mm" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <TextBox Text="{Binding CurrentWall.Section.Height, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Keff" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <TextBox Text="{Binding CurrentWall.Section.Keff, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
+                                    </StackPanel>
+
+                                    <!-- Row 3 -->
+                                    <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,10,12">
+                                        <Grid Margin="0,0,0,4" Width="160" HorizontalAlignment="Left">
+                                            <TextBlock Text="Percentage of steel (Pt)" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="%" FontSize="11" Foreground="{StaticResource Theme.Muted}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <TextBox Text="{Binding CurrentWall.Section.PercentageSteel, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputBox}"/>
+                                    </StackPanel>
+
+                                    <!-- Row 4: Action Button -->
+                                    <Button Grid.Row="3" Grid.Column="3" Content="Perform Calculations" Command="{Binding RunCommand}"
+                                        Style="{StaticResource PrimaryActionButtonStyle}" Width="160" HorizontalAlignment="Left" Margin="0,15,0,15"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Design Pipeline Panel -->
+                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12" Background="Transparent">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Design pipeline" FontSize="14" FontWeight="SemiBold" FontFamily="Space Grotesk"/>
+                                        <TextBlock Text="Review calculation progress" FontSize="12" Foreground="{StaticResource Theme.Muted}" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <ItemsControl ItemsSource="{Binding DesignPipeline}" Margin="16,12">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Width="20" Height="20" CornerRadius="10" BorderThickness="1" Margin="0,0,10,0" VerticalAlignment="Top"
                                                     Background="{Binding IsDone, Converter={StaticResource BoolToSafeBgConverter}}"
                                                     BorderBrush="{Binding IsDone, Converter={StaticResource BoolToSafeBrushConverter}}">
-                                                <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                                                    <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="10" 
                                                            Foreground="{Binding IsDone, Converter={StaticResource BoolToSafeBrushConverter}}" 
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                                            Visibility="{Binding IsDone, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                            </Border>
-                                            <StackPanel Grid.Column="1">
-                                                <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="{Binding IsActive, Converter={StaticResource BoolToFontWeightConverter}, FallbackValue=Normal}"/>
-                                                <TextBlock Text="{Binding Desc}" FontSize="11" Foreground="{StaticResource Theme.Muted}" TextWrapping="Wrap"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
+                                                </Border>
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="{Binding IsActive, Converter={StaticResource BoolToFontWeightConverter}, FallbackValue=Normal}"/>
+                                                    <TextBlock Text="{Binding Desc}" FontSize="11" Foreground="{StaticResource Theme.Muted}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
 
-                    <!-- Load Combinations Panel -->
-                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16">
-                        <StackPanel>
-                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12">
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="Load combinations" FontSize="14" FontWeight="SemiBold" FontFamily="Space Grotesk"/>
-                                    <TextBlock Text="Click a row to set it as the active demand point on the interaction curve" FontSize="12" Foreground="{StaticResource Theme.Muted}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Grid Margin="16,12,16,12">
-                                <Border Background="White" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left" Width="250" Height="34">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Viewbox Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" 
-                                                      Stroke="{StaticResource Theme.Placeholder}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                                            </Canvas>
-                                        </Viewbox>
-
-                                        <Grid VerticalAlignment="Center" Margin="0,0,0,1">
-                                            <TextBlock Text="Search combinations..." Foreground="{StaticResource Theme.Placeholder}" FontSize="12" IsHitTestVisible="False" VerticalAlignment="Center" Margin="2,0,0,0">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Text, ElementName=SearchTextBox}" Value="">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                            <TextBox x:Name="SearchTextBox" Background="Transparent" BorderThickness="0" Width="190" FontSize="12" Foreground="{StaticResource Theme.InputText}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
-                                        </Grid>
+                        <!-- Load Combinations Panel -->
+                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Load combinations" FontSize="14" FontWeight="SemiBold" FontFamily="Space Grotesk"/>
+                                        <TextBlock Text="Click a row to set it as the active demand point on the interaction curve" FontSize="12" Foreground="{StaticResource Theme.Muted}" Margin="0,2,0,0"/>
                                     </StackPanel>
                                 </Border>
-                            </Grid>
 
-                            <DataGrid ItemsSource="{Binding LoadCombinationsView}" 
+                                <Grid Margin="16,12,16,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Safe / Total Count -->
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding SafeCombinationsCount, StringFormat='SAFE: {0}'}" FontSize="10" FontWeight="SemiBold" Foreground="#166534" Margin="0,0,8,0"/>
+                                        <TextBlock Text="/" FontSize="10" FontWeight="SemiBold" Foreground="#9CA3AF" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding TotalCombinationsCount, StringFormat='TOTAL: {0}'}" FontSize="10" FontWeight="SemiBold" Foreground="#4B5563"/>
+                                    </StackPanel>
+
+                                    <!-- Search and Filter -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Border Background="White" BorderBrush="#A0A0A0" BorderThickness="1" CornerRadius="4" Margin="0,0,8,0" Padding="6,2" Height="30">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Ellipse Canvas.Left="4" Canvas.Top="4" Width="14" Height="14" 
+                                                                 Stroke="#9CA3AF" StrokeThickness="2" Fill="Transparent"/>
+                                                        <Line X1="21" Y1="21" X2="16.65" Y2="16.65" 
+                                                              Stroke="#9CA3AF" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                                
+                                                <Grid VerticalAlignment="Center" Margin="0,0,0,1">
+                                                    <TextBlock Text="Search combinations..." Foreground="#9CA3AF" FontSize="12" IsHitTestVisible="False" VerticalAlignment="Center" Margin="2,0,0,0">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Text, ElementName=SearchTextBox}" Value="">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBox x:Name="SearchTextBox" Background="Transparent" BorderThickness="0" Width="150" FontSize="12" Foreground="#374151" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Button x:Name="FilterButton" Command="{Binding ToggleFilterPopupCommand}" Style="{StaticResource ActionButtonStyle}" FontSize="12" Padding="11,5" Height="30" Cursor="Hand">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Viewbox Width="13" Height="13" Margin="0,0,5,0" VerticalAlignment="Center">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M4,6 H20 M8,12 H16 M11,18 H13" 
+                                                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <TextBlock Text="Filter" VerticalAlignment="Center" FontWeight="Medium"/>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Popup x:Name="FilterPopup" IsOpen="{Binding IsFilterPopupOpen}" StaysOpen="False" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom" HorizontalOffset="-100" VerticalOffset="8" AllowsTransparency="True">
+                                            <Border Background="White" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="6" Margin="0,0,15,15">
+                                                <Border.Effect>
+                                                    <DropShadowEffect Color="Black" Opacity="0.15" BlurRadius="12" Direction="270" ShadowDepth="4"/>
+                                                </Border.Effect>
+                                                <StackPanel Width="150" Margin="15,10">
+                                                    <TextBlock Text="Filter by Status" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,10"/>
+                                                    <RadioButton Content="All" IsChecked="{Binding IsFilterAll}" Margin="0,0,0,5" GroupName="StatusFilter"/>
+                                                    <RadioButton Content="Safe" IsChecked="{Binding IsFilterSafe}" Margin="0,0,0,5" GroupName="StatusFilter"/>
+                                                    <RadioButton Content="Unsafe" IsChecked="{Binding IsFilterUnsafe}" Margin="0,0,0,5" GroupName="StatusFilter"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </Popup>
+                                    </StackPanel>
+                                </Grid>
+
+                                <DataGrid ItemsSource="{Binding LoadCombinationsView}" 
                                       SelectedItem="{Binding SelectedLoadCombination, Mode=TwoWay}"
                                       AutoGenerateColumns="False" IsReadOnly="True" 
                                       Style="{StaticResource StandardDataGridStyle}" Background="Transparent"
@@ -257,103 +320,103 @@
                                       VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" EnableRowVirtualization="True" EnableColumnVirtualization="True"
                                       ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" CanUserSortColumns="True"
                                       MinHeight="100" MaxHeight="350" CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Combination" Binding="{Binding OutputCase}" Width="1.5*" />
-                                    <DataGridTextColumn Header="Pu (kN)" Binding="{Binding P, StringFormat={}{0:F1}}" Width="*" />
-                                    <DataGridTextColumn Header="Mu2 (kNm)" Binding="{Binding M2, StringFormat={}{0:F2}}" Width="*" />
-                                    <DataGridTextColumn Header="Mu3 (kNm)" Binding="{Binding M3, StringFormat={}{0:F2}}" Width="*" />
-                                    <DataGridTextColumn Header="Cap. M" Binding="{Binding FinalM3, StringFormat={}{0:F2}}" Width="*" />
-                                    <DataGridTextColumn Header="Ratio" Binding="{Binding Ratio, StringFormat={}{0:F2}}" Width="*" />
-                                    <!-- Status Column using a DataTemplate to show SAFE/UNSAFE pills -->
-                                    <DataGridTemplateColumn Header="Status" Width="*">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Combination" Binding="{Binding OutputCase}" Width="1.5*" />
+                                        <DataGridTextColumn Header="Pu (kN)" Binding="{Binding P, StringFormat={}{0:F1}}" Width="*" />
+                                        <DataGridTextColumn Header="Mu2 (kNm)" Binding="{Binding M2, StringFormat={}{0:F2}}" Width="*" />
+                                        <DataGridTextColumn Header="Mu3 (kNm)" Binding="{Binding M3, StringFormat={}{0:F2}}" Width="*" />
+                                        <DataGridTextColumn Header="Cap. M" Binding="{Binding FinalM3, StringFormat={}{0:F2}}" Width="*" />
+                                        <DataGridTextColumn Header="Ratio" Binding="{Binding Ratio, StringFormat={}{0:F2}}" Width="*" />
+                                        <!-- Status Column using a DataTemplate to show SAFE/UNSAFE pills -->
+                                        <DataGridTemplateColumn Header="Status" Width="*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border CornerRadius="10" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center"
                                                         Background="{Binding IsSafe, Converter={StaticResource BoolToSafeBgConverter}}"
                                                         BorderBrush="{Binding IsSafe, Converter={StaticResource BoolToSafeBrushConverter}}" BorderThickness="1">
-                                                    <TextBlock Text="{Binding IsSafe, Converter={StaticResource BoolToSafeTextConverter}}" 
+                                                        <TextBlock Text="{Binding IsSafe, Converter={StaticResource BoolToSafeTextConverter}}" 
                                                                Foreground="{Binding IsSafe, Converter={StaticResource BoolToSafeBrushConverter}}" 
                                                                FontSize="10" FontWeight="Bold"/>
-                                                </Border>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
-
-            <!-- Right Column: Interaction Plot -->
-            <Border Grid.Column="2" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="400"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Plot Header -->
-                    <StackPanel Grid.Row="0" Margin="16,16,16,10">
-                        <TextBlock Text="Interaction diagram" FontSize="15" FontWeight="SemiBold" FontFamily="Space Grotesk"/>
-                        <TextBlock Text="Normalized Pu–Mu envelope · IS 456" FontSize="12" Foreground="{StaticResource Theme.Muted}"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
+                </ScrollViewer>
 
-                    <!-- Axis Toggles -->
-                    <Grid Grid.Row="1" Margin="16,0,16,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <!-- To make these real toggles, we'll use Buttons setting the bool in VM. 
+                <!-- Right Column: Interaction Plot -->
+                <Border x:Name="RightColumnBorder" Grid.Row="0" Grid.Column="2" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16" VerticalAlignment="Top">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="400"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Plot Header -->
+                        <StackPanel Grid.Row="0" Margin="16,16,16,10">
+                            <TextBlock Text="Interaction diagram" FontSize="15" FontWeight="SemiBold" FontFamily="Space Grotesk"/>
+                            <TextBlock Text="Normalized Pu–Mu envelope · IS 456" FontSize="12" Foreground="{StaticResource Theme.Muted}"/>
+                        </StackPanel>
+
+                        <!-- Axis Toggles -->
+                        <Grid Grid.Row="1" Margin="16,0,16,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- To make these real toggles, we'll use Buttons setting the bool in VM. 
                              Using a simplified ToggleButton logic or just Buttons for now. -->
-                        <ToggleButton Grid.Column="0" Content="Major axis (M3)" IsChecked="{Binding IsMajorAxis}" 
+                            <ToggleButton Grid.Column="0" Content="Major axis (M3)" IsChecked="{Binding IsMajorAxis}" 
                                       Height="30" FontSize="12" FontFamily="Space Grotesk" FontWeight="SemiBold"/>
-                        <ToggleButton Grid.Column="2" Content="Minor axis (M2)" IsChecked="{Binding IsMajorAxis, Converter={StaticResource InverseBoolConverter}}" 
+                            <ToggleButton Grid.Column="2" Content="Minor axis (M2)" IsChecked="{Binding IsMajorAxis, Converter={StaticResource InverseBoolConverter}}" 
                                       Height="30" FontSize="12" FontFamily="Space Grotesk" FontWeight="SemiBold"/>
-                    </Grid>
+                        </Grid>
 
-                    <!-- The Plot -->
-                    <oxy:PlotView Grid.Row="2" Model="{Binding PlotModel}" Background="Transparent" Margin="10,0"/>
+                        <!-- The Plot -->
+                        <oxy:PlotView Grid.Row="2" Model="{Binding PlotModel}" Background="Transparent" Margin="10,0"/>
 
-                    <!-- Plot Footer / Controls -->
-                    <Border Grid.Row="3" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Background="{StaticResource CardBrush}" CornerRadius="0,0,8,8">
-                        <StackPanel Margin="16">
-                            <!-- Slider Section -->
-                            <Grid Margin="0,0,0,12">
-                                <TextBlock Text="Steel percentage — Pt provided" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Left" Foreground="{StaticResource Theme.Ink}"/>
-                                <TextBlock FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" Foreground="{StaticResource Theme.Ink}">
+                        <!-- Plot Footer / Controls -->
+                        <Border Grid.Row="3" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Background="{StaticResource CardBrush}" CornerRadius="0,0,8,8">
+                            <StackPanel Margin="16">
+                                <!-- Slider Section -->
+                                <Grid Margin="0,0,0,12">
+                                    <TextBlock Text="Steel percentage — Pt provided" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Left" Foreground="{StaticResource Theme.Ink}"/>
+                                    <TextBlock FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" Foreground="{StaticResource Theme.Ink}">
                                     <Run Text="{Binding CurrentWall.FinalPt, StringFormat={}{0:F2}}" />
                                     <Run Text="%" Foreground="{StaticResource Theme.Muted}" FontSize="10"/>
-                                </TextBlock>
-                            </Grid>
-                            <Slider Minimum="0.8" Maximum="4.0" Value="{Binding CurrentWall.FinalPt, UpdateSourceTrigger=PropertyChanged}" SmallChange="0.1" LargeChange="0.5" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,0,0,12"/>
-
-                            <Border Background="#F3F4F6" CornerRadius="4" Padding="12,8" Margin="0,0,0,16">
-                                <Grid>
-                                    <TextBlock Text="Calculate minimum safe Pt for this combination" FontSize="11" Foreground="{StaticResource Theme.Muted}" VerticalAlignment="Center"/>
-                                    <Button Content="Apply" Command="{Binding RecommendPtCommand}" HorizontalAlignment="Right" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" Padding="12,4" FontSize="11" Cursor="Hand">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{StaticResource Theme.Ink}"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                    </Button>
+                                    </TextBlock>
                                 </Grid>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </Border>
-        </Grid>
+                                <Slider Minimum="0.8" Maximum="4.0" Value="{Binding CurrentWall.FinalPt, UpdateSourceTrigger=PropertyChanged}" SmallChange="0.1" LargeChange="0.5" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding CurrentWall.Section.MainBarDia, StringFormat='Equivalent Main Bar Dia: {0:F1} mm'}" FontSize="11" Foreground="{StaticResource Theme.Muted}" Margin="0,0,0,12" HorizontalAlignment="Right"/>
 
-        <!-- Finalize Steel Percentage Panel -->
-        <Border Grid.Row="2" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16">
+                                <Border Background="#F3F4F6" CornerRadius="4" Padding="12,8" Margin="0,0,0,16">
+                                    <Grid>
+                                        <TextBlock Text="Calculate minimum safe Pt for this combination" FontSize="11" Foreground="{StaticResource Theme.Muted}" VerticalAlignment="Center"/>
+                                        <Button Content="Apply" Command="{Binding RecommendPtCommand}" HorizontalAlignment="Right" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" Padding="12,4" FontSize="11" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{StaticResource Theme.Ink}"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+        
+                <!-- Finalize Steel Percentage Panel -->
+                <Border Grid.Row="1" Grid.ColumnSpan="3" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,16">
             <StackPanel>
                 <!-- Header -->
                 <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="16,12">
@@ -430,6 +493,8 @@
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
-        </Border>
+            </Border>
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </UserControl>

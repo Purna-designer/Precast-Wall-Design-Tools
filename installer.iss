@@ -1,6 +1,6 @@
 [Setup]
 AppName=Precast Wall Connection Tool
-AppVersion=1.0.0
+AppVersion=1.0.6
 DefaultDirName={autopf}\Possibuild\Precast Wall Tool
 DefaultGroupName=Possibuild Tools
 UninstallDisplayIcon={app}\Precast Wall Horizontal Connection Tool.exe

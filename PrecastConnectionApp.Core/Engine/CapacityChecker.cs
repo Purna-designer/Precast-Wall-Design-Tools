@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using PrecastConnectionApp.Models;
 
@@ -13,7 +12,7 @@ namespace PrecastConnectionApp.Core.Engine
         public double CapacityM { get; set; }
         public double Ratio => DemandM == 0 ? 0 : CapacityM / DemandM;
     }
-
+    
     public static class CapacityChecker
     {
         public static CapacityResult CheckUniaxial(SectionProperties props, ForceItem force, bool isMajorAxis)
@@ -33,8 +32,7 @@ namespace PrecastConnectionApp.Core.Engine
                 ClearCover = props.ClearCover,
                 NumMinorBars = props.NumMinorBars,
                 NumMajorBars = props.NumMajorBars,
-                MainBarDia = props.MainBarDia,
-                ShearBarDia = props.ShearBarDia
+                PercentageSteel = props.PercentageSteel
             };
             var curve = InteractionCurveGenerator.Generate(curveProps);
 
@@ -92,10 +90,9 @@ namespace PrecastConnectionApp.Core.Engine
             double govM3_kNm = Math.Max(appliedM3_kNm, minEccM3_kNm);
 
             // Step 3: Min eccentricity (minor axis)
-            // Note: $D$21 (ExtEccentricityMinor) acts as the base offset in Excel's formula: MAX(20, (BaseOffset + L/500 + B/30))
-            double eMinMinor = props.ExtEccentricityMinor + props.EffectiveHeight / 500.0 + props.Width / 30.0;
-            if (eMinMinor < 20.0) eMinMinor = 20.0;
-            double minEccM2_kNm = P_kN * eMinMinor / 1000.0;
+            double eMinMinorAcc = props.EffectiveHeight / 500.0 + props.Width / 30.0;
+            if (eMinMinorAcc < 20.0) eMinMinorAcc = 20.0;
+            double minEccM2_kNm = P_kN * (eMinMinorAcc / 1000.0);
 
             // Step 4: Gov moment (minor axis)
             // In the VBA, they do appliedM2 = Mu2 + Pu * ExtEccMinor. 
@@ -108,7 +105,7 @@ namespace PrecastConnectionApp.Core.Engine
                 Width = props.Width, Depth = props.Depth,
                 Fck = props.Fck, Fy = props.Fy, ClearCover = props.ClearCover,
                 NumMinorBars = props.NumMinorBars, NumMajorBars = props.NumMajorBars,
-                MainBarDia = props.MainBarDia, ShearBarDia = props.ShearBarDia
+                PercentageSteel = props.PercentageSteel
             };
             var curveMajor = InteractionCurveGenerator.Generate(curvePropsMajor).OrderBy(p => p.P).ToList();
             double capM3_Nmm = 0;
@@ -129,8 +126,9 @@ namespace PrecastConnectionApp.Core.Engine
                 Width = props.Depth, Depth = props.Width, // swap for minor axis
                 Fck = props.Fck, Fy = props.Fy, ClearCover = props.ClearCover,
                 NumMinorBars = props.NumMinorBars, NumMajorBars = props.NumMajorBars,
-                MainBarDia = props.MainBarDia, ShearBarDia = props.ShearBarDia
+                PercentageSteel = props.PercentageSteel
             };
+
             var curveMinor = InteractionCurveGenerator.Generate(curvePropsMinor).OrderBy(p => p.P).ToList();
             double capM2_Nmm = 0;
             for (int i = 0; i < curveMinor.Count - 1; i++)
