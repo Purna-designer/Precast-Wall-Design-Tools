@@ -34,8 +34,20 @@ namespace PrecastConnectionApp.Services
                 else
                 {
                     StatusNotifier.Instance.SetStatus("Starting new ETABS Application...");
-                    myETABSObject = myHelper.CreateObjectProgID("CSI.ETABS.API.ETABSObject");
-                    myETABSObject.ApplicationStart();
+                    try 
+                    {
+                        myETABSObject = myHelper.CreateObjectProgID("CSI.ETABS.API.ETABSObject");
+                        myETABSObject.ApplicationStart();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception("Failed to start or connect to ETABS. Ensure ETABS is installed and both apps have matching Administrator privileges. Details: " + ex.Message);
+                    }
+                }
+
+                if (myETABSObject == null)
+                {
+                     throw new Exception("ETABS API returned a null object. Connection failed due to COM/Bitness mismatch or permissions.");
                 }
 
                 cSapModel sapModel = myETABSObject.SapModel;
